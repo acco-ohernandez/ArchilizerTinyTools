@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <!--<AddIn Type="Command">
+    <Text>ArchilizerTinyTools - Command 1</Text>
+    <Description>Some description for ArchilizerTinyTools</Description>
+    <Assembly>ArchilizerTinyTools.dll</Assembly>
+    <FullClassName>ArchilizerTinyTools.Command1</FullClassName>
+    <ClientId>3651409b-f38e-4eb4-8ca3-79d110d9772d</ClientId>
+    <VendorId>com.YOUR COMPANY NAME</VendorId>
+    <VendorDescription>YOUR COMPANY NAME, YOUR COMPANY URL</VendorDescription>
+  </AddIn>
+  <AddIn Type="Command">
+    <Text>ArchilizerTinyTools - Command 2</Text>
+    <Description>Some description for ArchilizerTinyTools</Description>
+    <Assembly>ArchilizerTinyTools.dll</Assembly>
+    <FullClassName>ArchilizerTinyTools.Command2</FullClassName>
+    <ClientId>64822ca3-8877-42b7-85ab-51b255767b91</ClientId>
+    <VendorId>com.YOUR COMPANY NAME</VendorId>
+    <VendorDescription>YOUR COMPANY NAME, YOUR COMPANY URL</VendorDescription>
+  </AddIn>-->
+  <AddIn Type="Application">
+    <Name>ArchilizerTinyTools</Name>
+    <Assembly>ArchilizerTinyTools.dll</Assembly>
+    <FullClassName>ArchilizerTinyTools.App</FullClassName>
+    <ClientId>9553e461-913b-4105-a686-0faa61ad3994</ClientId>
+    <VendorId>com.YOUR COMPANY NAME</VendorId>
+    <VendorDescription>YOUR COMPANY NAME, YOUR COMPANY URL</VendorDescription>
+  </AddIn>
+</RevitAddIns>
