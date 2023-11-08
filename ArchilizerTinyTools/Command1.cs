@@ -9,6 +9,8 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 
+using ArchilizerTinyTools.Forms;
+
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
@@ -34,9 +36,13 @@ namespace ArchilizerTinyTools
 
             // "C:\Users\ohernandez\Videos\ArchSmarter Revit Plugins Course\03 - Creating Views and Sheets\02 - Challenge\Creating Views and Sheets - Challenge Solution.mp4"
 
+
+
             #region FocusedCode
             // Collect all views in the document
             var views = new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Views);
+
+
 
             //// Hard coded view for testing by its name
             //var view_1Mech = views.Cast<View>().Where(v => v.Name == "1 - Mech").First();
@@ -45,7 +51,8 @@ namespace ArchilizerTinyTools
 
             // Allow user to dynamically sellect views from a list 
             List<View> dynamicViewsList = new List<View>();
-            dynamicViewsList = GetSelectedViewsList(doc);
+
+            // dynamicViewsList = GetSelectedViewsList(doc); // C Sharp Form testing
 
             // Collect all title blocks that are element types
             var titleBlocksCollector = new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_TitleBlocks).WhereElementIsElementType();
@@ -53,12 +60,29 @@ namespace ArchilizerTinyTools
             // Find the "30x42" title block by its name
             var titleBlockId = titleBlocksCollector.Where(t => t.Name == "30x42").First().Id;
 
+            FilterRule rule = ParameterFilterRuleFactory.CreateEqualsRule(new ElementId((int)BuiltInParameter.SYMBOL_FAMILY_NAME_PARAM), "Viewport", false);
+            ElementParameterFilter filter = new ElementParameterFilter(rule);
+            IEnumerable<Element> viewPortFamilyTypes = new FilteredElementCollector(doc)
+                                .WhereElementIsElementType()
+                                .WherePasses(filter);
+
 
 
             var xyzPoint = new XYZ(0, 0, 0);
             // This bool "oneToOne" will determine if one curView sheet should be created per each curView
             // if set to false, all selected views are going to be put into one sheet.
             var oneToOne = false;
+
+            // Selections Form
+            var viewsForm = new ViewsToSheets_Form();
+            viewsForm.dgViews.ItemsSource = views.Cast<View>().Select(view => view.Name).ToList();
+            viewsForm.dgTitleBlocks.ItemsSource = titleBlocksCollector.Cast<Element>().Select(tblock => tblock.Name).ToList();
+            viewsForm.dgTitleText.ItemsSource = viewPortFamilyTypes.Cast<Element>().Select(vpt => vpt.Name).ToList();
+            viewsForm.ShowDialog();
+
+            if (true) return Result.Cancelled;
+
+
             var sheetsCreated = new List<ViewSheet>();
             // Start a new transaction to create new sheets and viewports
             using (Transaction t = new Transaction(doc))
@@ -162,12 +186,12 @@ namespace ArchilizerTinyTools
             List<View> selectedViews = new List<View>();
 
             // Create and configure a Windows Forms dialog
-            Forms.Form viewSelectionDialog = new Forms.Form();
+            System.Windows.Forms.Form viewSelectionDialog = new System.Windows.Forms.Form();
             viewSelectionDialog.Text = "Select Views for Sheets";
 
             // Create a CheckedListBox control to list views
-            Forms.CheckedListBox viewListBox = new Forms.CheckedListBox();
-            viewListBox.Dock = Forms.DockStyle.Fill;
+            var viewListBox = new System.Windows.Forms.CheckedListBox();
+            viewListBox.Dock = System.Windows.Forms.DockStyle.Fill;
 
             // Add views to the CheckedListBox
             var views = new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Views);
@@ -180,7 +204,7 @@ namespace ArchilizerTinyTools
             viewSelectionDialog.Controls.Add(viewListBox);
 
             // Add an "OK" button for the user to confirm their selection
-            Forms.Button okButton = new Forms.Button();
+            var okButton = new System.Windows.Forms.Button();
             okButton.Text = "OK";
             okButton.Click += (sender, e) =>
             {
