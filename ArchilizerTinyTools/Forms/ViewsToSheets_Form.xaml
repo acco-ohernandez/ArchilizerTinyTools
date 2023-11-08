@@ -7,15 +7,16 @@
         mc:Ignorable="d"
         Title="ViewsToSheets_Form" 
         Height="500" 
-        Width="800" 
+        Width="900" 
         MinWidth="450" 
         MinHeight="450"
-    >
-    
-    <Grid>
-        <!-- RowDefinition -->
+        >
+
+    <Grid Width="auto">
+        <!-- RowDefinitions -->
         <Grid.RowDefinitions>
             <RowDefinition Height="40" />
+            <RowDefinition Height="30" />
             <RowDefinition Height="30" />
             <RowDefinition Height="*" />
             <RowDefinition Height="90" />
@@ -31,71 +32,79 @@
         <Label Grid.Row="1" Content="Make your selections" x:Name="lbl_DatagridLabel" FontSize="12" />
 
         <!-- Row [2] -->
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="5" />
-                <ColumnDefinition Width="5" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="5" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-
-            <DataGrid x:Name="dgViews" Grid.Column="0" Grid.ColumnSpan="2"
-                GridLinesVisibility="None"
-                AlternatingRowBackground="AliceBlue"
-                CanUserReorderColumns="True"
-                SelectionMode="Extended"
-                AutoGenerateColumns="False"
-                EnableColumnVirtualization="False"
-                EnableRowVirtualization="True"
-                CanUserAddRows="False"
-                Margin="10,10,10,62"
-                >
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Views (Multi Select)" Binding="{Binding}" />
-                </DataGrid.Columns>
-            </DataGrid>
-
-            <GridSplitter Grid.Column="1" Width="5" VerticalAlignment="Stretch" ResizeDirection="Columns" />
-
-            <DataGrid x:Name="dgTitleBlocks" Grid.Column="2" Grid.ColumnSpan="2"
-                GridLinesVisibility="None"
-                AlternatingRowBackground="AliceBlue"
-                CanUserReorderColumns="True"
-                SelectionMode="Single"
-                AutoGenerateColumns="False"
-                EnableColumnVirtualization="False"
-                EnableRowVirtualization="True"
-                CanUserAddRows="False"
-                Margin="10,10,10,62"
-                >
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="TitleBlocks (Single Select)" Binding="{Binding}" />
-                </DataGrid.Columns>
-            </DataGrid>
-
-            <GridSplitter Grid.Column="3" Width="5" VerticalAlignment="Stretch" ResizeDirection="Columns" />
-
-            <DataGrid x:Name="dgTitleText" Grid.Column="4" Grid.ColumnSpan="2"
-                GridLinesVisibility="None"
-                AlternatingRowBackground="AliceBlue"
-                CanUserReorderColumns="True"
-                SelectionMode="Single"
-                AutoGenerateColumns="False"
-                EnableColumnVirtualization="False"
-                EnableRowVirtualization="True"
-                CanUserAddRows="False"
-                Margin="10,10,10,62"
-                >
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Title Text (Single Select)" Binding="{Binding}" />
-                </DataGrid.Columns>
-            </DataGrid>
-        </Grid>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,5">
+            <TextBlock Text="Search Views: " VerticalAlignment="Center"/>
+            <TextBox x:Name="txtSearch" Width="200" VerticalAlignment="Center" Margin="5,0" TextChanged="txtSearch_TextChanged"/>
+        </StackPanel>
 
         <!-- Row [3] -->
-        <Grid Grid.Row="3" Margin="3">
+        <StackPanel Grid.Row="3" Orientation="Horizontal" MaxHeight="700" Width="auto" HorizontalAlignment="Center">
+            <!-- Add a ScrollViewer for each DataGrid within the StackPanel -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <DataGrid x:Name="dgViews" 
+                    GridLinesVisibility="None"
+                    AlternatingRowBackground="AliceBlue"
+                    CanUserReorderColumns="True"
+                    SelectionMode="Extended"
+                    AutoGenerateColumns="False"
+                    EnableColumnVirtualization="False"
+                    EnableRowVirtualization="True"
+                    CanUserAddRows="False"
+                    Width="auto"
+                    MinWidth="100"
+                    Margin="10,10,10,62"
+                >
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Views (Multi Select)" Binding="{Binding}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </ScrollViewer>
+
+            <GridSplitter Width="5" Height="5" ResizeDirection="Rows" VerticalAlignment="Top" />
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <DataGrid x:Name="dgTitleBlocks" 
+                    GridLinesVisibility="None"
+                    AlternatingRowBackground="AliceBlue"
+                    CanUserReorderColumns="True"
+                    SelectionMode="Single"
+                    AutoGenerateColumns="False"
+                    EnableColumnVirtualization="False"
+                    EnableRowVirtualization="True"
+                    CanUserAddRows="False"
+                    MinWidth="100"
+                    Margin="10,10,10,62"
+                >
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="TitleBlocks (Single Select)" Binding="{Binding}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </ScrollViewer>
+
+            <GridSplitter Width="5" Height="5" ResizeDirection="Rows" VerticalAlignment="Top" />
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <DataGrid x:Name="dgTitleText" 
+                    GridLinesVisibility="None"
+                    AlternatingRowBackground="AliceBlue"
+                    CanUserReorderColumns="True"
+                    SelectionMode="Single"
+                    AutoGenerateColumns="False"
+                    EnableColumnVirtualization="False"
+                    EnableRowVirtualization="True"
+                    CanUserAddRows="False"
+                    MinWidth="100"
+                    Margin="10,10,10,62"
+                >
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Title Text (Single Select)" Binding="{Binding}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </ScrollViewer>
+        </StackPanel>
+
+        <!-- Row [4] -->
+        <Grid Grid.Row="4" Margin="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>

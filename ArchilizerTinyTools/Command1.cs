@@ -34,20 +34,9 @@ namespace ArchilizerTinyTools
             // this is a variable for the current Revit model
             Document doc = uiapp.ActiveUIDocument.Document;
 
-            // "C:\Users\ohernandez\Videos\ArchSmarter Revit Plugins Course\03 - Creating Views and Sheets\02 - Challenge\Creating Views and Sheets - Challenge Solution.mp4"
-
-
-
             #region FocusedCode
             // Collect all views in the document
-            var views = new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Views);
-
-
-
-            //// Hard coded view for testing by its name
-            //var view_1Mech = views.Cast<View>().Where(v => v.Name == "1 - Mech").First();
-            //var ACCOLevel1 = views.Cast<View>().Where(v => v.Name == "ACCO - Level 1").First();
-            //var dynamicViewsList = new List<View>() { view_1Mech, ACCOLevel1 };
+            var views = new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Views).Cast<View>().ToList();
 
             // Allow user to dynamically sellect views from a list 
             List<View> dynamicViewsList = new List<View>();
@@ -74,11 +63,24 @@ namespace ArchilizerTinyTools
             var oneToOne = false;
 
             // Selections Form
-            var viewsForm = new ViewsToSheets_Form();
+            // Selections Form
+            var viewsForm = new ViewsToSheets_Form(views);
+            //var viewsForm = new ViewsToSheets_Form();
             viewsForm.dgViews.ItemsSource = views.Cast<View>().Select(view => view.Name).ToList();
-            viewsForm.dgTitleBlocks.ItemsSource = titleBlocksCollector.Cast<Element>().Select(tblock => tblock.Name).ToList();
+            //viewsForm.dgTitleBlocks.ItemsSource = titleBlocksCollector.Cast<Element>().Select(tblock => tblock.Name).ToList();
+            viewsForm.dgTitleBlocks.ItemsSource = titleBlocksCollector.Cast<FamilySymbol>().Select(tblock => tblock.Name).ToList();
             viewsForm.dgTitleText.ItemsSource = viewPortFamilyTypes.Cast<Element>().Select(vpt => vpt.Name).ToList();
             viewsForm.ShowDialog();
+
+            // get the list of view selected by the user from the viewsForm
+            // Code Here
+
+            // get the TitleBlock Selected by the user
+            // Code Here
+
+            // get the TitleText selected by the user
+            // Code Here
+
 
             if (true) return Result.Cancelled;
 
