@@ -61,7 +61,6 @@ namespace ArchilizerTinyTools
                 var viewsForm = new ViewsToSheets_Form(views, titleBlocksCollector);
 
                 viewsForm.dgViews.ItemsSource = views.Cast<View>().Select(view => view.Name).ToList();
-                //viewsForm.dgTitleBlocks.ItemsSource = titleBlocksCollector.Cast<Element>().Select(tblock => tblock.Name).ToList();
                 viewsForm.dgTitleBlocks.ItemsSource = titleBlocksCollector.Cast<FamilySymbol>().Select(tblock => tblock.Name).ToList();
                 viewsForm.dgTitleText.ItemsSource = viewPortFamilyTypes.Cast<Element>().Select(vpt => vpt.Name).ToList();
                 // Show the form
@@ -80,7 +79,8 @@ namespace ArchilizerTinyTools
                 FamilySymbol selectedTitleBlock = viewsForm.SelectedTitleBlock;
 
                 // Get the selected title text
-                Element selectedTitleText = viewsForm.SelectedTitleText;
+                var selectedTitleText = viewsForm.SelectedTitleText;
+                var elem = viewPortFamilyTypes.Cast<Element>().First(i => i.Name == selectedTitleText);
 
                 // Location to place the view port
                 var xyzPoint = new XYZ(1, 1, 0);
@@ -95,7 +95,7 @@ namespace ArchilizerTinyTools
                 {
                     t.Start("Create Sheets and Viewports");
                     //sheetsCreated = CreateSheetsFromViews(doc, selectedViews, titleBlockId, xyzPoint, oneToOne);
-                    sheetsCreated = CreateSheetsFromViews(doc, selectedViews, selectedTitleBlock.Id, xyzPoint, oneToOne, MultipleViewsSheetName);
+                    sheetsCreated = CreateSheetsFromViews(doc, selectedViews, selectedTitleBlock.Id, xyzPoint, oneToOne, MultipleViewsSheetName, elem.Id);
                     t.Commit();
                 }
 
@@ -180,7 +180,7 @@ namespace ArchilizerTinyTools
             return selectedViews;
         }
 
-        List<ViewSheet> CreateSheetsFromViews(Document doc, List<View> viewList, ElementId titleBlockId, XYZ xyzPoint, bool oneToOne, string multipleViewsSheetName)
+        List<ViewSheet> CreateSheetsFromViews(Document doc, List<View> viewList, ElementId titleBlockId, XYZ xyzPoint, bool oneToOne, string multipleViewsSheetName, ElementId textTypeId)
         {
             var viewSheetCreated = new List<ViewSheet>();
             if (oneToOne)
@@ -196,6 +196,9 @@ namespace ArchilizerTinyTools
 
                         // Create a new viewport on the new sheet and place the curView
                         var newViewPort = Viewport.Create(doc, newViewSheet.Id, curView.Id, xyzPoint);
+                        List<ElementId> newElemId = new List<ElementId>() { textTypeId };
+                        if (newViewPort != null)
+                            newViewPort.ChangeTypeId(textTypeId);
                     }
                     catch (Exception e)
                     {
@@ -216,6 +219,8 @@ namespace ArchilizerTinyTools
                     {
                         // Create a new viewport on the new sheet for each view
                         var newViewPort = Viewport.Create(doc, newViewSheet.Id, curView.Id, xyzPoint);
+                        if (newViewPort != null)
+                            newViewPort.ChangeTypeId(textTypeId);
                     }
                     catch (Exception e)
                     {

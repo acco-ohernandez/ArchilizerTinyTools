@@ -85,7 +85,7 @@ namespace ArchilizerTinyTools.Forms
         // Add properties for selected views, title block, and title text
         public List<View> SelectedViews { get; private set; }
         public FamilySymbol SelectedTitleBlock { get; private set; }
-        public Element SelectedTitleText { get; private set; }
+        public string SelectedTitleText { get; private set; }
 
         private void btn_Ok_Click(object sender, RoutedEventArgs e)
         {
@@ -144,15 +144,39 @@ namespace ArchilizerTinyTools.Forms
             return null;
         }
 
+        //private ElementId GetSelectedTitleText()
+        //{
+        //    // Check if any item is selected
+        //    if (dgTitleText.SelectedItem != null)
+        //    {
+        //        // Assuming dgTitleText is bound to a collection of strings
+        //        string selectedElementName = dgTitleText.SelectedItem.ToString();
+        //        var items = dgTitleText.Items;
+        //        // Find the corresponding Element based on the selected string
+        //        var selectedElement = dgTitleText.Items.Cast<FamilySymbol>().FirstOrDefault(vpt => vpt.Name == selectedElementName);
 
-        private Element GetSelectedTitleText()
+        //        if (selectedElement != null)
+        //        {
+        //            // Assuming the ElementId is stored in a parameter named "ID_PARAM" (replace with the actual parameter name)
+        //            Parameter idParameter = selectedElement.LookupParameter("ID_PARAM");
+
+        //            if (idParameter != null && idParameter.StorageType == StorageType.ElementId)
+        //            {
+        //                // Return the ElementId
+        //                return idParameter.AsElementId();
+        //            }
+        //        }
+        //    }
+
+        //    // Return ElementId.InvalidElementId if nothing is selected or the ID_PARAM is not found
+        //    return ElementId.InvalidElementId;
+        //}
+
+
+
+        private string GetSelectedTitleText()
         {
-            //string selectedTitleText = dgTitleText.SelectedItem?.ToString();
-
-            // If you have a title text object, you might get its name property instead of using ToString
-            //string selectedTitleText = (dgTitleText.SelectedItem as Element)?.Name;
-            Element selectedTitleText = dgTitleText.SelectedItem as Element;
-
+            var selectedTitleText = dgTitleText.SelectedItem as string;
             return selectedTitleText;
         }
 
@@ -171,5 +195,14 @@ namespace ArchilizerTinyTools.Forms
         {
             return tb_SheetName.Text;
         }
+
+        //private void dgTitleText_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        //{
+        //    // Set e.Handled to true to indicate that the event is handled and no further action should be taken
+        //    e.Handled = true;
+        //    // You can add additional handling logic here if needed
+        //}
+
+
     }
 }

@@ -55,7 +55,7 @@
                     Margin="10,10,10,62"
                 >
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Views (Multi Select)" Binding="{Binding}" />
+                        <DataGridTextColumn Header="Views (Multi Select)" Binding="{Binding}"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </ScrollViewer>
