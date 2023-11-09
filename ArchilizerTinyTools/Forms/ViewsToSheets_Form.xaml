@@ -110,10 +110,10 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <StackPanel Orientation="Vertical" Grid.Column="0" Margin="3">
-                <RadioButton x:Name="rb_OneToOne" Content="Views to sheets" Checked="rb_OneToOne_Checked"/>
+                <RadioButton x:Name="rb_OneToOne" Content="Views to multiple sheets" Checked="rb_OneToOne_Checked"/>
                 <RadioButton x:Name="rb_SigleSheet" Content="Views to single sheet" Checked="rb_SigleSheet_Checked"/>
                 <Label x:Name="lbl_SheetName" Content="Sheet Name: " Visibility="Hidden"/>
-                <TextBox x:Name="tb_SheetName" Height="30" Visibility="Hidden"/>
+                <TextBox x:Name="tb_SheetName" Text="Multiple Views Sheet" Height="30" Visibility="Hidden"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Right" Margin="3">
                 <Button x:Name="btn_Ok" Content="OK" Height="30" Width="90"  Margin="0,0,10,0" Click="btn_Ok_Click" />

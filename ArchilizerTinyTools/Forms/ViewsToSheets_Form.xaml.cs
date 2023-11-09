@@ -28,13 +28,15 @@ namespace ArchilizerTinyTools.Forms
             this.Loaded += ViewsToSheets_Form_Loaded;
         }
         private List<View> views;
+        private IEnumerable<FamilySymbol> titleBlocksCollector;
 
-        public ViewsToSheets_Form(List<View> views)
+        public ViewsToSheets_Form(List<View> views, IEnumerable<FamilySymbol> titleBlocksCollector)
         {
             InitializeComponent();
             // Attach the Loaded event handler to set the radio button's properties.
             this.Loaded += ViewsToSheets_Form_Loaded;
             this.views = views;
+            this.titleBlocksCollector = titleBlocksCollector; // Assign the parameter to the class field
         }
         private void ViewsToSheets_Form_Loaded(object sender, RoutedEventArgs e)
         {
@@ -56,11 +58,11 @@ namespace ArchilizerTinyTools.Forms
         }
 
 
-        private void btn_Ok_Click(object sender, RoutedEventArgs e)
-        {
-            this.DialogResult = true;
-            this.Close();
-        }
+        //private void btn_Ok_Click(object sender, RoutedEventArgs e)
+        //{
+        //    this.DialogResult = true;
+        //    this.Close();
+        //}
 
         private void btn_Cancel_Click(object sender, RoutedEventArgs e)
         {
@@ -79,5 +81,95 @@ namespace ArchilizerTinyTools.Forms
             dgViews.ItemsSource = filteredViews.Select(view => view.Name).ToList();
         }
 
+
+        // Add properties for selected views, title block, and title text
+        public List<View> SelectedViews { get; private set; }
+        public FamilySymbol SelectedTitleBlock { get; private set; }
+        public Element SelectedTitleText { get; private set; }
+
+        private void btn_Ok_Click(object sender, RoutedEventArgs e)
+        {
+            // Assign the selected views, title block, and title text
+            SelectedViews = GetSelectedViews();
+            SelectedTitleBlock = GetSelectedTitleBlockFS();
+            SelectedTitleText = GetSelectedTitleText();
+
+            // Set DialogResult to true to indicate that the user clicked OK
+            DialogResult = true;
+
+            // Close the form
+            Close();
+        }
+
+        // Existing code...
+
+        // Add methods to get selected views, title block, and title text
+        private List<View> GetSelectedViews()
+        {
+            List<View> selectedViews = new List<View>();
+
+            foreach (var selectedItem in dgViews.SelectedItems)
+            {
+                string viewName = selectedItem.ToString();
+                var selectedView = views.FirstOrDefault(view => view.Name == viewName);
+                if (selectedView != null)
+                {
+                    selectedViews.Add(selectedView);
+                }
+            }
+
+            return selectedViews;
+        }
+
+
+        private string GetSelectedTitleBlockName()
+        {
+            string selectedTitleBlock = dgTitleBlocks.SelectedItem?.ToString();
+
+            // If you have a title block object, you might get its name property instead of using ToString
+            // string selectedTitleBlock = (dgTitleBlocks.SelectedItem as FamilySymbol)?.Name;
+
+            return selectedTitleBlock;
+        }
+        private FamilySymbol GetSelectedTitleBlockFS()
+        {
+            string selectedTitleBlockName = dgTitleBlocks.SelectedItem?.ToString();
+
+            if (selectedTitleBlockName != null)
+            {
+                // Assuming titleBlocksCollector is a list of FamilySymbol
+                return titleBlocksCollector.FirstOrDefault(tb => tb.Name == selectedTitleBlockName);
+            }
+
+            return null;
+        }
+
+
+        private Element GetSelectedTitleText()
+        {
+            //string selectedTitleText = dgTitleText.SelectedItem?.ToString();
+
+            // If you have a title text object, you might get its name property instead of using ToString
+            //string selectedTitleText = (dgTitleText.SelectedItem as Element)?.Name;
+            Element selectedTitleText = dgTitleText.SelectedItem as Element;
+
+            return selectedTitleText;
+        }
+
+        public bool OneOrManySheets()
+        {
+            bool oneToOne = true;
+            if (rb_OneToOne.IsChecked == true)
+            {
+                return oneToOne;
+            }
+            else
+                return false;
+        }
+
+        public string GetTheMultipleViewsSheetName()
+        {
+            return tb_SheetName.Text;
+        }
     }
 }
