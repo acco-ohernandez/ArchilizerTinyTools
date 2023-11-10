@@ -66,7 +66,8 @@ namespace ArchilizerTinyTools
                 // Show the form
                 viewsForm.ShowDialog();
 
-                var sheetsCreated = new List<ViewSheet>();
+                //var sheetsCreated = new List<ViewSheet>();
+                var sheetsCreated = new Dictionary<ViewSheet, List<Viewport>>();
 
                 // Check if the user doesn't click OK
                 if (viewsForm.DialogResult != true)
@@ -99,9 +100,13 @@ namespace ArchilizerTinyTools
                     t.Commit();
                 }
 
+                //place a the new Viewports on each Sheet at a specific position relative to the title block's bounding box
+                RelocateViewportsOnSheets(doc, sheetsCreated);
+
                 // Display the sheet names
-                TaskDialog.Show("Info", $"View Sheets Created: {sheetsCreated.Count()}\n" +
-                                        $"{string.Join("\n", sheetsCreated.Select(s => s.Name))}");
+                //TaskDialog.Show("Info", $"View Sheets Created: {sheetsCreated.Count()}\n" +
+                //                        $"{string.Join("\n", sheetsCreated.Select(s => s.Name))}");
+                TaskDialog.Show("Info", $"View Sheets Created: {sheetsCreated.Count()}");
                 #endregion
 
             }
@@ -110,95 +115,37 @@ namespace ArchilizerTinyTools
             return Result.Succeeded;
         }
 
-        public List<View> GetSelectedViewsList(Document doc)
+
+
+        Dictionary<ViewSheet, List<Viewport>> CreateSheetsFromViews(Document doc, List<View> viewList, ElementId titleBlockId, XYZ xyzPoint, bool oneToOne, string multipleViewsSheetName, ElementId textTypeId)
         {
-            List<View> selectedViews = new List<View>();
-
-            // Create a new WPF window
-            Window viewSelectionWindow = new Window
-            {
-                Title = "Select Views for Sheets",
-                Width = 300,
-                Height = 300
-            };
-
-            // Create a ListBox for view selection
-            ListBox viewListBox = new ListBox
-            {
-                SelectionMode = SelectionMode.Multiple
-            };
-
-            // This code filters out views that are of type ViewTemplate
-            var views = new FilteredElementCollector(doc)
-                           .OfCategory(BuiltInCategory.OST_Views)
-                           .Cast<View>()
-                           .Where(v => !v.IsTemplate)
-                           .OrderBy(v => v.ViewType)
-                           .ThenBy(v => v.Name);
-
-
-            foreach (var view in views)
-            {
-                viewListBox.Items.Add(view.Name);
-            }
-
-            // Create a button for confirming the selection
-            Button okButton = new Button
-            {
-                Content = "OK",
-                Width = 80
-            };
-
-            // Handle button click
-            okButton.Click += (sender, e) =>
-            {
-                foreach (var item in viewListBox.SelectedItems)
-                {
-                    string viewName = item.ToString();
-                    var selectedView = views.Cast<View>().FirstOrDefault(v => v.Name == viewName);
-                    if (selectedView != null)
-                    {
-                        selectedViews.Add(selectedView);
-                    }
-                }
-
-                // Close the window
-                viewSelectionWindow.Close();
-            };
-
-            // Create a StackPanel to arrange controls
-            StackPanel stackPanel = new StackPanel();
-            stackPanel.Children.Add(viewListBox);
-            stackPanel.Children.Add(okButton);
-
-            // Set the content of the window to the stack panel
-            viewSelectionWindow.Content = stackPanel;
-
-            // Show the window as a dialog
-            viewSelectionWindow.ShowDialog();
-
-            return selectedViews;
-        }
-
-        List<ViewSheet> CreateSheetsFromViews(Document doc, List<View> viewList, ElementId titleBlockId, XYZ xyzPoint, bool oneToOne, string multipleViewsSheetName, ElementId textTypeId)
-        {
-            var viewSheetCreated = new List<ViewSheet>();
+            //var viewSheetCreated = new List<ViewSheet>();
+            var viewSheetCreated = new Dictionary<ViewSheet, List<Viewport>>();
             if (oneToOne)
             {
                 foreach (var curView in viewList)
                 {
                     try
                     {
+                        // Temporary list for viewports to be retruned
+                        var viewPortsCreated = new List<Viewport>();
+
                         // Create a new sheet
                         var newViewSheet = ViewSheet.Create(doc, titleBlockId);
                         newViewSheet.Name = curView.Name;
-                        viewSheetCreated.Add(newViewSheet);
+                        //viewSheetCreated.Add(newViewSheet);
 
                         // Create a new viewport on the new sheet and place the curView
                         var newViewPort = Viewport.Create(doc, newViewSheet.Id, curView.Id, xyzPoint);
                         List<ElementId> newElemId = new List<ElementId>() { textTypeId };
                         if (newViewPort != null) // If the viewPort is null, doesnt have any drawings, don't attempt to add a family type
+                        {
                             newViewPort.ChangeTypeId(textTypeId);
+                            viewPortsCreated.Add(newViewPort);
+                        }
+
+                        viewSheetCreated.Add(newViewSheet, viewPortsCreated);
+
                     }
                     catch (Exception e)
                     {
@@ -213,14 +160,21 @@ namespace ArchilizerTinyTools
                 var newViewSheet = ViewSheet.Create(doc, titleBlockId);
                 newViewSheet.Name = multipleViewsSheetName; // You can set any desired name
 
+                // Temporary list for viewports to be retruned
+                var viewPortsCreated = new List<Viewport>();
+
                 foreach (var curView in viewList)
                 {
                     try
                     {
+
                         // Create a new viewport on the new sheet for each view
                         var newViewPort = Viewport.Create(doc, newViewSheet.Id, curView.Id, xyzPoint);
                         if (newViewPort != null) // If the viewPort is null, doesnt have any drawings, don't attempt to add a family type
+                        {
                             newViewPort.ChangeTypeId(textTypeId);
+                            viewPortsCreated.Add(newViewPort);
+                        }
                     }
                     catch (Exception e)
                     {
@@ -228,11 +182,17 @@ namespace ArchilizerTinyTools
                     }
                 }
 
-                viewSheetCreated.Add(newViewSheet);
+                viewSheetCreated.Add(newViewSheet, viewPortsCreated);
             }
 
             return viewSheetCreated;
         }
+        void RelocateViewportsOnSheets(Document doc, Dictionary<ViewSheet, List<Viewport>> sheetsCreated)
+        {
+            throw new NotImplementedException();
+        }
+
+
 
         internal static PushButtonData GetButtonData()
         {
