@@ -27,9 +27,9 @@ namespace ArchilizerTinyTools.Forms
             // Attach the Loaded event handler to set the radio button's properties.
             this.Loaded += ViewsToSheets_Form_Loaded;
         }
+
         private List<View> views;
         private IEnumerable<FamilySymbol> titleBlocksCollector;
-
         public ViewsToSheets_Form(List<View> views, IEnumerable<FamilySymbol> titleBlocksCollector)
         {
             InitializeComponent();
@@ -56,13 +56,6 @@ namespace ArchilizerTinyTools.Forms
             lbl_SheetName.Visibility = System.Windows.Visibility.Visible;
             tb_SheetName.Visibility = System.Windows.Visibility.Visible;
         }
-
-
-        //private void btn_Ok_Click(object sender, RoutedEventArgs e)
-        //{
-        //    this.DialogResult = true;
-        //    this.Close();
-        //}
 
         private void btn_Cancel_Click(object sender, RoutedEventArgs e)
         {
@@ -101,8 +94,6 @@ namespace ArchilizerTinyTools.Forms
             Close();
         }
 
-        // Existing code...
-
         // Add methods to get selected views, title block, and title text
         private List<View> GetSelectedViews()
         {
@@ -121,16 +112,6 @@ namespace ArchilizerTinyTools.Forms
             return selectedViews;
         }
 
-
-        private string GetSelectedTitleBlockName()
-        {
-            string selectedTitleBlock = dgTitleBlocks.SelectedItem?.ToString();
-
-            // If you have a title block object, you might get its name property instead of using ToString
-            // string selectedTitleBlock = (dgTitleBlocks.SelectedItem as FamilySymbol)?.Name;
-
-            return selectedTitleBlock;
-        }
         private FamilySymbol GetSelectedTitleBlockFS()
         {
             string selectedTitleBlockName = dgTitleBlocks.SelectedItem?.ToString();
@@ -143,36 +124,6 @@ namespace ArchilizerTinyTools.Forms
 
             return null;
         }
-
-        //private ElementId GetSelectedTitleText()
-        //{
-        //    // Check if any item is selected
-        //    if (dgTitleText.SelectedItem != null)
-        //    {
-        //        // Assuming dgTitleText is bound to a collection of strings
-        //        string selectedElementName = dgTitleText.SelectedItem.ToString();
-        //        var items = dgTitleText.Items;
-        //        // Find the corresponding Element based on the selected string
-        //        var selectedElement = dgTitleText.Items.Cast<FamilySymbol>().FirstOrDefault(vpt => vpt.Name == selectedElementName);
-
-        //        if (selectedElement != null)
-        //        {
-        //            // Assuming the ElementId is stored in a parameter named "ID_PARAM" (replace with the actual parameter name)
-        //            Parameter idParameter = selectedElement.LookupParameter("ID_PARAM");
-
-        //            if (idParameter != null && idParameter.StorageType == StorageType.ElementId)
-        //            {
-        //                // Return the ElementId
-        //                return idParameter.AsElementId();
-        //            }
-        //        }
-        //    }
-
-        //    // Return ElementId.InvalidElementId if nothing is selected or the ID_PARAM is not found
-        //    return ElementId.InvalidElementId;
-        //}
-
-
 
         private string GetSelectedTitleText()
         {
@@ -196,13 +147,34 @@ namespace ArchilizerTinyTools.Forms
             return tb_SheetName.Text;
         }
 
-        //private void dgTitleText_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        //{
-        //    // Set e.Handled to true to indicate that the event is handled and no further action should be taken
-        //    e.Handled = true;
-        //    // You can add additional handling logic here if needed
-        //}
+        private void dg_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            // Set e.Handled to true to indicate that the event is handled and no further action should be taken
+            e.Handled = true;
+        }
 
+        public bool viewsSelected { get; set; }
+        public bool titleBlockSelected { get; set; }
+        public bool titleTextSelected { get; set; }
+
+        private void dgViews_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            viewsSelected = true;
+            if (viewsSelected & titleBlockSelected & titleTextSelected)
+                btn_Ok.IsEnabled = true;
+        }
+        private void dgTitleBlocks_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            titleBlockSelected = true;
+            if (viewsSelected & titleBlockSelected & titleTextSelected)
+                btn_Ok.IsEnabled = true;
+        }
+        private void dgTitleText_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            titleTextSelected = true;
+            if (viewsSelected & titleBlockSelected & titleTextSelected)
+                btn_Ok.IsEnabled = true;
+        }
 
     }
 }

@@ -197,7 +197,7 @@ namespace ArchilizerTinyTools
                         // Create a new viewport on the new sheet and place the curView
                         var newViewPort = Viewport.Create(doc, newViewSheet.Id, curView.Id, xyzPoint);
                         List<ElementId> newElemId = new List<ElementId>() { textTypeId };
-                        if (newViewPort != null)
+                        if (newViewPort != null) // If the viewPort is null, doesnt have any drawings, don't attempt to add a family type
                             newViewPort.ChangeTypeId(textTypeId);
                     }
                     catch (Exception e)
@@ -219,7 +219,7 @@ namespace ArchilizerTinyTools
                     {
                         // Create a new viewport on the new sheet for each view
                         var newViewPort = Viewport.Create(doc, newViewSheet.Id, curView.Id, xyzPoint);
-                        if (newViewPort != null)
+                        if (newViewPort != null) // If the viewPort is null, doesnt have any drawings, don't attempt to add a family type
                             newViewPort.ChangeTypeId(textTypeId);
                     }
                     catch (Exception e)
