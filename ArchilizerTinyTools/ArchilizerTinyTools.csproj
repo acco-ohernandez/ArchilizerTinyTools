@@ -2,6 +2,8 @@
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
+    <!-- This ProjectTypeGuids enables the project to be able to add WPF Windows Forms -->
+    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
       None
     </ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
@@ -78,6 +80,7 @@
     <StartAction>Program</StartAction>
     <RevitVersion>2022</RevitVersion>
     <StartProgram>$(ProgramW6432)\Autodesk\Revit 2022\Revit.exe</StartProgram>
+	<XamlDebuggingInformation>True</XamlDebuggingInformation>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == '2022Release'">
     <OutputPath>bin\Release\2022\</OutputPath>
@@ -162,6 +165,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.cs" />
+    <Compile Include="Forms\ViewsToSheets_Form.xaml.cs">
+      <DependentUpon>ViewsToSheets_Form.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Utils\ButtonDataClass.cs" />
     <Compile Include="Command2.cs" />
     <Compile Include="Command1.cs" />
@@ -192,6 +198,13 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="ArchilizerTinyTools.addin" />
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <Page Include="Forms\ViewsToSheets_Form.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

@@ -1,0 +1,130 @@
+﻿<Window x:Class="ArchilizerTinyTools.Forms.ViewsToSheets_Form"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ArchilizerTinyTools.Forms"
+        mc:Ignorable="d"
+        Title="ViewsToSheets_Form" 
+        Height="500" 
+        Width="900" 
+        MinWidth="450" 
+        MinHeight="450"
+        >
+
+    <Grid Width="auto">
+        <!-- RowDefinitions -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40" />
+            <RowDefinition Height="30" />
+            <RowDefinition Height="30" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="90" />
+        </Grid.RowDefinitions>
+
+        <!-- Row [0] -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal">
+            <Label Content="Create sheet(s) from selected views" FontSize="20" FontWeight="Bold" />
+            <Label Content="" x:Name="info" Margin="60,0,0,0" />
+        </StackPanel>
+
+        <!-- Row [1] -->
+        <Label Grid.Row="1" Content="Make your selections" x:Name="lbl_DatagridLabel" FontSize="12" />
+
+        <!-- Row [2] -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,5">
+            <TextBlock Text="Search Views: " VerticalAlignment="Center"/>
+            <TextBox x:Name="txtSearch" Width="200" VerticalAlignment="Center" Margin="5,0" TextChanged="txtSearch_TextChanged"/>
+        </StackPanel>
+
+        <!-- Row [3] -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" MaxHeight="700" Width="auto" HorizontalAlignment="Center">
+            <!-- Add a ScrollViewer for each DataGrid within the StackPanel -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <DataGrid x:Name="dgViews" 
+                          GridLinesVisibility="None"
+                          AlternatingRowBackground="AliceBlue"
+                          CanUserReorderColumns="True"
+                          SelectionMode="Extended"
+                          AutoGenerateColumns="False"
+                          EnableColumnVirtualization="False"
+                          EnableRowVirtualization="True"
+                          CanUserAddRows="False"
+                          Width="auto"
+                          MinWidth="100"
+                          Margin="10,10,10,62"
+                          MouseDoubleClick="dg_MouseDoubleClick" 
+                          SelectionChanged="dgViews_SelectionChanged"
+                          >
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Views (Multi Select)" Binding="{Binding Mode=OneWay}"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </ScrollViewer>
+
+            <GridSplitter Width="5" Height="5" ResizeDirection="Rows" VerticalAlignment="Top" />
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <DataGrid x:Name="dgTitleBlocks" 
+                          GridLinesVisibility="None"
+                          AlternatingRowBackground="AliceBlue"
+                          CanUserReorderColumns="True"
+                          SelectionMode="Single"
+                          AutoGenerateColumns="False"
+                          EnableColumnVirtualization="False"
+                          EnableRowVirtualization="True"
+                          CanUserAddRows="False"
+                          MinWidth="100"
+                          Margin="10,10,10,62"
+                          MouseDoubleClick="dg_MouseDoubleClick"
+                          SelectionChanged="dgTitleBlocks_SelectionChanged"
+                >
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="TitleBlocks (Single Select)" Binding="{Binding Mode=OneWay}"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </ScrollViewer>
+
+            <GridSplitter Width="5" Height="5" ResizeDirection="Rows" VerticalAlignment="Top" />
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <DataGrid x:Name="dgTitleText" 
+                          GridLinesVisibility="None"
+                          AlternatingRowBackground="AliceBlue"
+                          CanUserReorderColumns="True"
+                          SelectionMode="Single"
+                          AutoGenerateColumns="False"
+                          EnableColumnVirtualization="False"
+                          EnableRowVirtualization="True"
+                          CanUserAddRows="False"
+                          MinWidth="100"
+                          Margin="10,10,10,62"
+                          MouseDoubleClick="dg_MouseDoubleClick" 
+                          SelectionChanged="dgTitleText_SelectionChanged"
+                >
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Title Text (Single Select)" Binding="{Binding Mode=OneWay}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </ScrollViewer>
+        </StackPanel>
+
+        <!-- Row [4] -->
+        <Grid Grid.Row="4" Margin="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Vertical" Grid.Column="0" Margin="3">
+                <RadioButton x:Name="rb_OneToOne" Content="Views to multiple sheets" Checked="rb_OneToOne_Checked"/>
+                <RadioButton x:Name="rb_SigleSheet" Content="Views to single sheet" Checked="rb_SigleSheet_Checked"/>
+                <Label x:Name="lbl_SheetName" Content="Sheet Name: " Visibility="Hidden"/>
+                <TextBox x:Name="tb_SheetName" Text="Multiple Views Sheet" Height="30" Visibility="Hidden"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Right" Margin="3">
+                <Button x:Name="btn_Ok" Content="OK" Height="30" Width="90"  Margin="0,0,10,0" IsEnabled="False" Click="btn_Ok_Click" />
+                <Button x:Name="btn_Cancel" Content="Cancel" Height="30" Width="90" Click="btn_Cancel_Click"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>
