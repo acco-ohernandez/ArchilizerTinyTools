@@ -17,7 +17,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="40" />
             <RowDefinition Height="30" />
-            <RowDefinition Height="30" />
+            <RowDefinition Height="40" />
             <RowDefinition Height="*" />
             <RowDefinition Height="90" />
         </Grid.RowDefinitions>
@@ -32,9 +32,17 @@
         <Label Grid.Row="1" Content="Make your selections" x:Name="lbl_DatagridLabel" FontSize="12" />
 
         <!-- Row [2] -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,5">
+        <StackPanel Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10,5">
             <TextBlock Text="Search Views: " VerticalAlignment="Center"/>
             <TextBox x:Name="txtSearch" Width="200" VerticalAlignment="Center" Margin="5,0" TextChanged="txtSearch_TextChanged"/>
+        </StackPanel>
+        <StackPanel Grid.Row="2"  Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="10,5">
+            <Label Content="Insert Location: X" />
+            <TextBox x:Name="txt_X" Text="0.5" Width="auto" MinWidth="15" MaxWidth="30" VerticalAlignment="Center" Margin="1,0"/>
+            <Label Content="Y" />
+            <TextBox x:Name="txt_Y" Text="0.5" Width="auto" MinWidth="15" MaxWidth="30" VerticalAlignment="Center" Margin="1,0" />
+            <Label Content="Z" />
+            <TextBox x:Name="txt_Z" Text="0" Width="auto" MinWidth="15" MaxWidth="30" VerticalAlignment="Center" Margin="1,0" IsEnabled="False"/>
         </StackPanel>
 
         <!-- Row [3] -->
