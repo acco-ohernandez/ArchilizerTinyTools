@@ -156,25 +156,60 @@ namespace ArchilizerTinyTools.Forms
         public bool viewsSelected { get; set; }
         public bool titleBlockSelected { get; set; }
         public bool titleTextSelected { get; set; }
+        public bool xIsDouble { get; set; }
+        public bool yIsDouble { get; set; }
 
         private void dgViews_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             viewsSelected = true;
-            if (viewsSelected & titleBlockSelected & titleTextSelected)
+            if (viewsSelected & titleBlockSelected & titleTextSelected & xIsDouble)
                 btn_Ok.IsEnabled = true;
         }
         private void dgTitleBlocks_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             titleBlockSelected = true;
-            if (viewsSelected & titleBlockSelected & titleTextSelected)
+            if (viewsSelected & titleBlockSelected & titleTextSelected & xIsDouble & yIsDouble)
                 btn_Ok.IsEnabled = true;
         }
         private void dgTitleText_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             titleTextSelected = true;
-            if (viewsSelected & titleBlockSelected & titleTextSelected)
+            if (viewsSelected & titleBlockSelected & titleTextSelected & xIsDouble & yIsDouble)
                 btn_Ok.IsEnabled = true;
         }
-
+        private void txt_X_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            xIsDouble = true;
+            TextBox textBox = (TextBox)sender;
+            if (!double.TryParse(textBox.Text, out double result))
+            {
+                // If the input is not a valid double, you can clear the text or take other action.
+                textBox.Text = ""; // Replace with your desired default value.
+                xIsDouble = false;
+                btn_Ok.IsEnabled = false;
+            }
+            else
+            {
+                if (viewsSelected & titleBlockSelected & titleTextSelected & xIsDouble & yIsDouble)
+                    btn_Ok.IsEnabled = true;
+            }
+        }
+        private void txt_Y_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            yIsDouble = true;
+            TextBox textBox = (TextBox)sender;
+            if (!double.TryParse(textBox.Text, out double result))
+            {
+                // If the input is not a valid double, you can clear the text or take other action.
+                textBox.Text = ""; // Replace with your desired default value.
+                yIsDouble = false;
+                btn_Ok.IsEnabled = false;
+            }
+            else
+            {
+                if (viewsSelected & titleBlockSelected & titleTextSelected & xIsDouble & yIsDouble)
+                    btn_Ok.IsEnabled = true;
+            }
+        }
     }
 }

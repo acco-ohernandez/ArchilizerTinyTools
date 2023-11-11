@@ -38,7 +38,7 @@ namespace ArchilizerTinyTools
             try
             {
                 // Collect all views in the document
-                var views = new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Views).Cast<View>().ToList();
+                var views = new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Views).Cast<View>().OrderBy(x => x.ViewType).ToList();
 
                 // Allow user to dynamically sellect views from a list 
                 List<View> dynamicViewsList = new List<View>();
@@ -61,8 +61,8 @@ namespace ArchilizerTinyTools
                 var viewsForm = new ViewsToSheets_Form(views, titleBlocksCollector);
 
                 viewsForm.dgViews.ItemsSource = views.Cast<View>().Select(view => view.Name).ToList();
-                viewsForm.dgTitleBlocks.ItemsSource = titleBlocksCollector.Cast<FamilySymbol>().Select(tblock => tblock.Name).ToList();
-                viewsForm.dgTitleText.ItemsSource = viewPortFamilyTypes.Cast<Element>().Select(vpt => vpt.Name).ToList();
+                viewsForm.dgTitleBlocks.ItemsSource = titleBlocksCollector.Cast<FamilySymbol>().OrderBy(x => x.Name).Select(tblock => tblock.Name).ToList();
+                viewsForm.dgTitleText.ItemsSource = viewPortFamilyTypes.Cast<Element>().OrderBy(x => x.Name).Select(vpt => vpt.Name).ToList();
                 // Show the form
                 viewsForm.ShowDialog();
 
@@ -83,8 +83,12 @@ namespace ArchilizerTinyTools
                 var selectedTitleText = viewsForm.SelectedTitleText;
                 var elem = viewPortFamilyTypes.Cast<Element>().First(i => i.Name == selectedTitleText);
 
+
+                double txt_X = ParseTxtToDouble(viewsForm.txt_X.Text);
+                double txt_Y = ParseTxtToDouble(viewsForm.txt_Y.Text);
+
                 // Location to place the view port
-                var xyzPoint = new XYZ(1, 1, 0);
+                var xyzPoint = new XYZ(txt_X, txt_Y, 0);
 
                 // This bool "oneToOne" will determine if one sheet should be created per each curView
                 // if set to false, all selected views are going to be put into one sheet.
@@ -101,7 +105,7 @@ namespace ArchilizerTinyTools
                 }
 
                 //place a the new Viewports on each Sheet at a specific position relative to the title block's bounding box
-                RelocateViewportsOnSheets(doc, sheetsCreated);
+                //RelocateViewportsOnSheets(doc, sheetsCreated); // Method not implemented
 
                 // Display the sheet names
                 //TaskDialog.Show("Info", $"View Sheets Created: {sheetsCreated.Count()}\n" +
@@ -191,8 +195,16 @@ namespace ArchilizerTinyTools
         {
             throw new NotImplementedException();
         }
+        double ParseTxtToDouble(string stringNumber)
+        {
+            string numberString = stringNumber; // Replace with your string
+            double number;
+            Double.TryParse(numberString, out number);
 
+            // 'number' now contains the double value.
+            return number;
 
+        }
 
         internal static PushButtonData GetButtonData()
         {

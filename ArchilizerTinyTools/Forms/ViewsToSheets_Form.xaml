@@ -38,9 +38,9 @@
         </StackPanel>
         <StackPanel Grid.Row="2"  Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="10,5">
             <Label Content="Insert Location: X" />
-            <TextBox x:Name="txt_X" Text="0.5" Width="auto" MinWidth="15" MaxWidth="30" VerticalAlignment="Center" Margin="1,0"/>
+            <TextBox x:Name="txt_X" Text="0.5" Width="auto" MinWidth="15" MaxWidth="30" VerticalAlignment="Center" Margin="1,0" TextChanged="txt_X_TextChanged"/>
             <Label Content="Y" />
-            <TextBox x:Name="txt_Y" Text="0.5" Width="auto" MinWidth="15" MaxWidth="30" VerticalAlignment="Center" Margin="1,0" />
+            <TextBox x:Name="txt_Y" Text="0.5" Width="auto" MinWidth="15" MaxWidth="30" VerticalAlignment="Center" Margin="1,0" TextChanged="txt_Y_TextChanged" />
             <Label Content="Z" />
             <TextBox x:Name="txt_Z" Text="0" Width="auto" MinWidth="15" MaxWidth="30" VerticalAlignment="Center" Margin="1,0" IsEnabled="False"/>
         </StackPanel>
