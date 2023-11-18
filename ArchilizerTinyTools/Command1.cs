@@ -208,12 +208,11 @@ namespace ArchilizerTinyTools
             return viewSheetCreated;
         }
 
-        // Helper method to get the center of a bounding box
         XYZ GetCenterOfBoundingBox(BoundingBoxXYZ boundingBox)
         {
+            // Helper method to get the center of a bounding box
             return 0.5 * (boundingBox.Min + boundingBox.Max);
         }
-
 
         Dictionary<ViewSheet, List<Viewport>> CreateSheetsFromViews3(Document doc, List<View> viewList, FamilySymbol titleBlock, XYZ xyzPoint, bool oneToOne, string multipleViewsSheetName, ElementId textTypeId)
         {
@@ -425,7 +424,6 @@ namespace ArchilizerTinyTools
                 }
             }
         }
-
 
         double ParseTxtToDouble(string stringNumber)
         {
