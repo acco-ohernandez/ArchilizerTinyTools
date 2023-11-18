@@ -63,16 +63,30 @@ namespace ArchilizerTinyTools.Forms
             this.Close();
         }
 
+        //private void txtSearch_TextChanged(object sender, TextChangedEventArgs e)
+        //{
+        //    string searchText = txtSearch.Text.ToLower();
+
+        //    // Filter the views based on the search text
+        //    var filteredViews = views.Cast<View>().Where(view => view.Name.ToLower().Contains(searchText)).ToList();
+
+        //    // Update the DataGrid's item source with the filtered views
+        //    dgViews.ItemsSource = filteredViews.Select(view => view.Name).ToList();
+        //}
         private void txtSearch_TextChanged(object sender, TextChangedEventArgs e)
         {
             string searchText = txtSearch.Text.ToLower();
 
             // Filter the views based on the search text
-            var filteredViews = views.Cast<View>().Where(view => view.Name.ToLower().Contains(searchText)).ToList();
+            var filteredViewInfos = this.dgViews.Items
+                .Cast<ViewInfo>()
+                .Where(viewInfo => viewInfo.Name.ToLower().Contains(searchText))
+                .ToList();
 
             // Update the DataGrid's item source with the filtered views
-            dgViews.ItemsSource = filteredViews.Select(view => view.Name).ToList();
+            this.dgViews.ItemsSource = filteredViewInfos;
         }
+
 
 
         // Add properties for selected views, title block, and title text

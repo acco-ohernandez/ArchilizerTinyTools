@@ -60,7 +60,14 @@ namespace ArchilizerTinyTools
                 // Selections Form
                 var viewsForm = new ViewsToSheets_Form(views, titleBlocksCollector);
 
-                viewsForm.dgViews.ItemsSource = views.Cast<View>().Select(view => view.Name).ToList();
+                var viewInfos = views.OrderBy(x => x.ViewType)
+                                     .Select(view => new ViewInfo(view.Name, view.ViewType, view.Id))
+                                     .ToList();
+
+                viewsForm.dgViews.ItemsSource = viewInfos;
+
+
+                //viewsForm.dgViews.ItemsSource = views.Cast<View>().Select(view => view.Name).ToList();
                 viewsForm.dgTitleBlocks.ItemsSource = titleBlocksCollector.Cast<FamilySymbol>().OrderBy(x => x.Name).Select(tblock => tblock.Name).ToList();
                 viewsForm.dgTitleText.ItemsSource = viewPortFamilyTypes.Cast<Element>().OrderBy(x => x.Name).Select(vpt => vpt.Name).ToList();
                 // Show the form
@@ -74,7 +81,16 @@ namespace ArchilizerTinyTools
                     return Result.Cancelled;
 
                 // Get the selected views
-                List<View> selectedViews = viewsForm.SelectedViews;
+                //List<View> selectedViews = viewsForm.SelectedViews;
+                // Get the selected ViewInfo objects
+                List<ViewInfo> selectedViewInfos = viewsForm.dgViews.SelectedItems.Cast<ViewInfo>().ToList();
+
+                // Extract the corresponding View objects from the original list
+                List<View> selectedViews = selectedViewInfos
+                    .Select(viewInfo => views.FirstOrDefault(view => view.Id == viewInfo.Id))
+                    .Where(view => view != null)
+                    .ToList();
+
 
                 // Get the selected title block
                 FamilySymbol selectedTitleBlock = viewsForm.SelectedTitleBlock;
@@ -453,4 +469,21 @@ namespace ArchilizerTinyTools
             return myButtonData1.Data;
         }
     }
+
+
+    public class ViewInfo
+    {
+        public string Name { get; set; }
+        public ViewType ViewType { get; set; }
+        public ElementId Id { get; set; } // Add this property
+
+        public ViewInfo(string name, ViewType viewType, ElementId id)
+        {
+            Name = name;
+            ViewType = viewType;
+            Id = id;
+        }
+    }
+
+
 }

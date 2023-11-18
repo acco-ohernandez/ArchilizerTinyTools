@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="ViewsToSheets_Form" 
         Height="500" 
-        Width="900" 
+        Width="1000" 
         MinWidth="450" 
         MinHeight="450"
         >
@@ -65,7 +65,8 @@
                           SelectionChanged="dgViews_SelectionChanged"
                           >
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Views (Multi Select)" Binding="{Binding Mode=OneWay}"/>
+                        <DataGridTextColumn Header="View Type" Binding="{Binding ViewType}" />
+                        <DataGridTextColumn Header="View Name" Binding="{Binding Name}" />
                     </DataGrid.Columns>
                 </DataGrid>
             </ScrollViewer>
