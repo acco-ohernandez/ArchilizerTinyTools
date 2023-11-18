@@ -48,8 +48,8 @@ namespace ArchilizerTinyTools
                 // Collect all title blocks that are element types
                 var titleBlocksCollector = new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_TitleBlocks).WhereElementIsElementType().Cast<FamilySymbol>().ToList();
 
-                // Find the "30x42" title block by its name
-                var titleBlockId = titleBlocksCollector.Where(t => t.Name == "30x42").First().Id;
+                ////Find the "30x42" title block by its name
+                //var titleBlockId = titleBlocksCollector.Where(t => t.Name == "30x42").First().Id;
 
                 FilterRule rule = ParameterFilterRuleFactory.CreateEqualsRule(new ElementId((int)BuiltInParameter.SYMBOL_FAMILY_NAME_PARAM), "Viewport", false);
                 ElementParameterFilter filter = new ElementParameterFilter(rule);
@@ -105,7 +105,7 @@ namespace ArchilizerTinyTools
                 }
 
                 //place a the new Viewports on each Sheet at a specific position relative to the title block's bounding box
-                //RelocateViewportsOnSheets(doc, sheetsCreated); // Method not implemented
+                RelocateViewportsOnSheets(doc, sheetsCreated, xyzPoint); // Method not implemented
 
                 // Display the sheet names
                 //TaskDialog.Show("Info", $"View Sheets Created: {sheetsCreated.Count()}\n" +
@@ -191,10 +191,58 @@ namespace ArchilizerTinyTools
 
             return viewSheetCreated;
         }
-        void RelocateViewportsOnSheets(Document doc, Dictionary<ViewSheet, List<Viewport>> sheetsCreated)
+
+        void RelocateViewportsOnSheets(Document doc, Dictionary<ViewSheet, List<Viewport>> sheetsCreated, XYZ location)
         {
-            throw new NotImplementedException();
+            foreach (var kvp in sheetsCreated)
+            {
+                ViewSheet sheet = kvp.Key;
+                List<Viewport> viewports = kvp.Value;
+
+                // Get the title block on the sheet
+                FamilyInstance titleBlockInstance = new FilteredElementCollector(doc, sheet.Id)
+                    .OfCategory(BuiltInCategory.OST_TitleBlocks)
+                    .Cast<FamilyInstance>()
+                    .FirstOrDefault();
+
+                if (titleBlockInstance != null)
+                {
+                    // Get the title block's bounding box
+                    BoundingBoxXYZ titleBlockBoundingBox = titleBlockInstance.get_BoundingBox(sheet);
+
+
+                    if (titleBlockBoundingBox != null)
+                    {
+                        var titleBlockBoundingBoxMin = titleBlockBoundingBox.Min;
+                        var titleBlockBoundingBoxMax = titleBlockBoundingBox.Max;
+                        XYZ titleBlockCenter = 0.5 * (titleBlockBoundingBoxMin + titleBlockBoundingBoxMax);
+                        //XYZ titleBlockCenter = 0.5 * (titleBlockBoundingBox.Min + titleBlockBoundingBox.Max);
+
+                        // Calculate the offset for moving viewports to the center of the title block
+                        XYZ offset = location - titleBlockCenter;
+
+                        using (Transaction t = new Transaction(doc))
+                        {
+                            t.Start("Relocate Viewports");
+
+                            // Move each viewport to the center of the title block
+                            foreach (Viewport viewport in viewports)
+                            {
+                                XYZ viewportLocation = viewport.GetBoxCenter();
+
+                                // Move the viewport to the new location
+                                //ElementTransformUtils.MoveElement(doc, viewport.Id, offset);
+                                ElementTransformUtils.MoveElement(doc, viewport.Id, titleBlockCenter);
+                            }
+
+                            t.Commit();
+                        }
+                    }
+                }
+            }
         }
+
+
         double ParseTxtToDouble(string stringNumber)
         {
             string numberString = stringNumber; // Replace with your string
