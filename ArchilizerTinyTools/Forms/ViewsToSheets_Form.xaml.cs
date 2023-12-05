@@ -30,6 +30,9 @@ namespace ArchilizerTinyTools.Forms
 
         private List<View> views;
         private IEnumerable<FamilySymbol> titleBlocksCollector;
+
+        private List<ViewInfo> originalViewsListInfo; // Add this as a field in your class
+
         public ViewsToSheets_Form(List<View> views, IEnumerable<FamilySymbol> titleBlocksCollector)
         {
             InitializeComponent();
@@ -37,6 +40,11 @@ namespace ArchilizerTinyTools.Forms
             this.Loaded += ViewsToSheets_Form_Loaded;
             this.views = views;
             this.titleBlocksCollector = titleBlocksCollector; // Assign the parameter to the class field
+
+            // Save the original list when initializing or loading data
+            originalViewsListInfo = views.OrderBy(view => view.Name)
+                                     .Select(view => new ViewInfo(view.Name, view.ViewType, view.Id))
+                                     .ToList();
         }
         private void ViewsToSheets_Form_Loaded(object sender, RoutedEventArgs e)
         {
@@ -57,29 +65,12 @@ namespace ArchilizerTinyTools.Forms
             tb_SheetName.Visibility = System.Windows.Visibility.Visible;
         }
 
-        private void btn_Cancel_Click(object sender, RoutedEventArgs e)
-        {
-            this.DialogResult = false;
-            this.Close();
-        }
-
-        //private void txtSearch_TextChanged(object sender, TextChangedEventArgs e)
-        //{
-        //    string searchText = txtSearch.Text.ToLower();
-
-        //    // Filter the views based on the search text
-        //    var filteredViews = views.Cast<View>().Where(view => view.Name.ToLower().Contains(searchText)).ToList();
-
-        //    // Update the DataGrid's item source with the filtered views
-        //    dgViews.ItemsSource = filteredViews.Select(view => view.Name).ToList();
-        //}
         private void txtSearch_TextChanged(object sender, TextChangedEventArgs e)
         {
             string searchText = txtSearch.Text.ToLower();
 
             // Filter the views based on the search text
-            var filteredViewInfos = this.dgViews.Items
-                .Cast<ViewInfo>()
+            var filteredViewInfos = originalViewsListInfo
                 .Where(viewInfo => viewInfo.Name.ToLower().Contains(searchText))
                 .ToList();
 
@@ -87,6 +78,11 @@ namespace ArchilizerTinyTools.Forms
             this.dgViews.ItemsSource = filteredViewInfos;
         }
 
+        private void ResetDataGrid()
+        {
+            // Reset the DataGrid to show the original list of views
+            this.dgViews.ItemsSource = originalViewsListInfo;
+        }
 
 
         // Add properties for selected views, title block, and title text
@@ -106,6 +102,14 @@ namespace ArchilizerTinyTools.Forms
 
             // Close the form
             Close();
+        }
+
+
+        private void btn_Cancel_Click(object sender, RoutedEventArgs e)
+        {
+            ResetDataGrid(); // Reset the DataGrid before closing the form
+            this.DialogResult = false;
+            this.Close();
         }
 
         // Add methods to get selected views, title block, and title text
@@ -167,6 +171,8 @@ namespace ArchilizerTinyTools.Forms
             e.Handled = true;
         }
 
+
+        #region This section has event handlers to make sure the user makes the necessary selections before clicking OK
         public bool viewsSelected { get; set; }
         public bool titleBlockSelected { get; set; }
         public bool titleTextSelected { get; set; }
@@ -225,5 +231,7 @@ namespace ArchilizerTinyTools.Forms
                     btn_Ok.IsEnabled = true;
             }
         }
+        #endregion
+
     }
 }

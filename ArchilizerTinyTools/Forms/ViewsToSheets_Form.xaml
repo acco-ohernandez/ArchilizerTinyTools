@@ -7,9 +7,10 @@
         mc:Ignorable="d"
         Title="ViewsToSheets_Form" 
         Height="500" 
-        Width="1000" 
+        Width="1200" 
         MinWidth="450" 
         MinHeight="450"
+        WindowStartupLocation="CenterScreen"
         >
 
     <Grid Width="auto" Margin="15">
@@ -63,6 +64,7 @@
                           Margin="10,10,10,62"
                           MouseDoubleClick="dg_MouseDoubleClick" 
                           SelectionChanged="dgViews_SelectionChanged"
+                          IsReadOnly="True"
                           >
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="View Type" Binding="{Binding ViewType}" />
@@ -87,9 +89,11 @@
                           Margin="10,10,10,62"
                           MouseDoubleClick="dg_MouseDoubleClick"
                           SelectionChanged="dgTitleBlocks_SelectionChanged"
+                          IsReadOnly="True"
                 >
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="TitleBlocks (Single Select)" Binding="{Binding Mode=OneWay}"/>
+                        <DataGridTextColumn Header="TitleBlocks (Single Select)" Binding="{Binding TitleBlockName}"/>
+                        <DataGridTextColumn Header="FamilyName" Binding="{Binding FamilyName}"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </ScrollViewer>
@@ -110,6 +114,7 @@
                           Margin="10,10,10,62"
                           MouseDoubleClick="dg_MouseDoubleClick" 
                           SelectionChanged="dgTitleText_SelectionChanged"
+                          IsReadOnly="True"
                 >
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Title Text (Single Select)" Binding="{Binding Mode=OneWay}" />

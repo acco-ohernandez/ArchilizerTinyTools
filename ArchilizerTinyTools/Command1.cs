@@ -73,7 +73,11 @@ namespace ArchilizerTinyTools
                 //viewsForm.dgViews.ItemsSource = views.Cast<View>().Select(view => view.Name).ToList();
 
                 //viewsForm.dgTitleBlocks.ItemsSource = titleBlocksCollector.Cast<FamilySymbol>().OrderBy(x => x.Name).Select(tblock => tblock.Name).ToList();
-                viewsForm.dgTitleBlocks.ItemsSource = titleBlocksCollector.Cast<FamilySymbol>().OrderBy(x => x.Name).Select(tblock => tblock.Name).ToList();
+
+                var titleBlocksInfo = titleBlocksCollector.OrderBy(tb => tb.FamilyName)
+                                                                          .Select(titleBlock => new TitleBlockInfo(titleBlock))
+                                                                          .ToList();
+                viewsForm.dgTitleBlocks.ItemsSource = titleBlocksInfo;
 
                 viewsForm.dgTitleText.ItemsSource = viewPortFamilyTypes.Cast<Element>().OrderBy(x => x.Name).Select(vpt => vpt.Name).ToList();
                 // Show the form
@@ -99,7 +103,15 @@ namespace ArchilizerTinyTools
 
 
                 // Get the selected title block
-                FamilySymbol selectedTitleBlock = viewsForm.SelectedTitleBlock;
+                var stb = viewsForm.dgTitleBlocks.SelectedItem as FamilySymbol;
+
+                //FamilySymbol selectedTitleBlock = viewsForm.SelectedTitleBlock;
+                // Assuming you have a DataGrid named dgTitleBlocks in your form
+                //TitleBlockInfo selectedTitleBlockInfo = viewsForm.dgTitleBlocks.SelectedItem as TitleBlockInfo;
+                FamilySymbol selectedTitleBlock = (viewsForm.dgTitleBlocks.SelectedItem as TitleBlockInfo).TitleBlockSymbol;
+
+
+
 
                 // Get the Sheet Type to use for new sheets
                 var selectedSheetType = viewsForm.cmb_SheetTypes.Text;
@@ -634,5 +646,17 @@ namespace ArchilizerTinyTools
         }
     }
 
+    public class TitleBlockInfo
+    {
+        public FamilySymbol TitleBlockSymbol { get; set; }
+        public string TitleBlockName { get; set; }
+        public string FamilyName { get; set; }
 
+        public TitleBlockInfo(FamilySymbol titleBlockName)
+        {
+            TitleBlockSymbol = titleBlockName;
+            TitleBlockName = titleBlockName.Name;
+            FamilyName = titleBlockName.FamilyName;
+        }
+    }
 }
