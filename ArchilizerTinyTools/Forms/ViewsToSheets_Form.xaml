@@ -12,7 +12,7 @@
         MinHeight="450"
         >
 
-    <Grid Width="auto">
+    <Grid Width="auto" Margin="15">
         <!-- RowDefinitions -->
         <Grid.RowDefinitions>
             <RowDefinition Height="40" />
@@ -123,14 +123,19 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <StackPanel Orientation="Vertical" Grid.Column="0" Margin="3">
+            <StackPanel Orientation="Vertical" Grid.Column="0" Margin="3" Width="auto">
                 <RadioButton x:Name="rb_OneToOne" Content="Views to multiple sheets" Checked="rb_OneToOne_Checked"/>
                 <RadioButton x:Name="rb_SigleSheet" Content="Views to single sheet" Checked="rb_SigleSheet_Checked"/>
                 <Label x:Name="lbl_SheetName" Content="Sheet Name: " Visibility="Hidden"/>
                 <TextBox x:Name="tb_SheetName" Text="Multiple Views Sheet" Height="30" Visibility="Hidden"/>
             </StackPanel>
-            <StackPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Right" Margin="3">
+            <StackPanel Orientation="Vertical" Grid.Column="1" HorizontalAlignment="Center" Width="auto">
+                <Label x:Name="lbl_SheeType" Content="Sheet Type"/>
+                <ComboBox x:Name="cmb_SheetTypes" IsEditable="True" Width="300"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Grid.Column="2" HorizontalAlignment="Right" Margin="3" Width="auto">
                 <Button x:Name="btn_Ok" Content="OK" Height="30" Width="90"  Margin="0,0,10,0" IsEnabled="False" Click="btn_Ok_Click" />
                 <Button x:Name="btn_Cancel" Content="Cancel" Height="30" Width="90" Click="btn_Cancel_Click"/>
             </StackPanel>
