@@ -1,5 +1,6 @@
 #region Namespaces
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Forms;
 using System.Windows.Media;
 
 using ArchilizerTinyTools.Forms;
@@ -18,6 +20,7 @@ using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
 
 using Forms = System.Windows.Forms;
+using View = Autodesk.Revit.DB.View;
 
 #endregion
 
@@ -68,6 +71,8 @@ namespace ArchilizerTinyTools
 
                 // Selections Form
                 var viewsForm = new ViewsToSheets_Form(views, titleBlocksCollector);
+
+                viewsForm.cmb_SheetNameStandards.ItemsSource = GetSheetNameStandardsList();
 
                 var viewInfos = views.OrderBy(x => x.ViewType)
                                      .Select(view => new ViewInfo(view.Name, view.ViewType, view.Id))
@@ -123,8 +128,8 @@ namespace ArchilizerTinyTools
 
                 // Get the Sheet Type to use for new sheets
                 var selectedSheetType = viewsForm.cmb_SheetTypes.Text;
-                if (selectedSheetType == "")
-                    selectedSheetType = "NEW SHEETS CREATED";
+                //if (selectedSheetType == "")
+                //    selectedSheetType = "NEW SHEETS CREATED"; // This would create a new Sheet Type the user can use later.
 
 
                 // Get the selected title text
@@ -168,6 +173,58 @@ namespace ArchilizerTinyTools
             return Result.Succeeded;
         }
 
+        private static List<string> GetSheetNameStandardsList()
+        {
+            // create a list of sheet name standards
+            return new List<string>
+            { "Construction",
+              "Engineering - Mechanical",
+              "Engineering - Plumbing",
+              "Engineering - Process Pipe",
+              "Engineering - Refrigeration"
+            };
+        }
+
+        //write a Method that takes a view and returns the "Browser Category" and "Browser Sub-Category"
+        public static Tuple<string, string> GetBrowserCategoryAndSubCategory(View view)
+        {
+            // Attempt to retrieve the "Browser Category" parameter
+            Parameter categoryParam = view.LookupParameter("Browser Category");
+            string browserCategory = categoryParam != null && categoryParam.HasValue ? categoryParam.AsString() : "Uncategorized";
+
+            // Attempt to retrieve the "Browser Sub-Category" parameter
+            Parameter subCategoryParam = view.LookupParameter("Browser Sub-Category");
+            string browserSubCategory = subCategoryParam != null && subCategoryParam.HasValue ? subCategoryParam.AsString() : "No Sub-Category";
+
+            return new Tuple<string, string>(browserCategory, browserSubCategory);
+        }
+
+        public static string GenerateSheetName(View view, string selectedStandard)
+        {
+            string sheetName = view.Name;
+            // get the associated level of the view
+            var associatedViewLevel = view.GenLevel.Name;
+
+            // Append the standard string
+            string standardChars = GetStandardChars(selectedStandard);
+
+
+
+            // Get the "Browser Category" and "Browser Sub-Category" for the view
+            var browserCatAndSubCat = GetBrowserCategoryAndSubCategory(view);
+            string browserCategory = browserCatAndSubCat.Item1;
+            string browserSubCategory = browserCatAndSubCat.Item2;
+
+            return sheetName;
+        }
+
+        private static string GetStandardChars(string selectedStandard)
+        {
+            var listOfStandards = GetSheetNameStandardsList();
+
+            return ""; // Not done
+        }
+
         public static List<string> GetSheetTypesList(Document doc)
         {
             // Get list of unique "Sheet Type" values from ViewSheet parameters.
@@ -204,6 +261,7 @@ namespace ArchilizerTinyTools
 
                         // Create a new sheet
                         var newViewSheet = ViewSheet.Create(doc, titleBlock.Id);
+                        newViewSheet.SheetNumber = GenerateSheetNumber(curView);
                         newViewSheet.Name = curView.Name;
 
                         // Set the Sheet Type for the newViewSheet
@@ -284,6 +342,31 @@ namespace ArchilizerTinyTools
             }
 
             return viewSheetCreated;
+        }
+
+        private string GenerateSheetNumber(View curView)
+        {
+            // Get the "Browser Category" and "Browser Sub-Category" for the view
+            var browserCatAndSubCat = GetBrowserCategoryAndSubCategory(curView);
+            string browserCategory = browserCatAndSubCat.Item1;
+            string browserSubCategory = browserCatAndSubCat.Item2;
+
+            // split the browserCategory and get the [0] to get the prefix
+            string SheetNumPrefix = browserSubCategory.Split(' ')[0];
+
+            // get the LevelSuffix from the View's Level, split the name and get the last integers
+            string LevelSuffix = curView.GenLevel.Name.Split(' ').Last();
+
+            // get the ScopeBoxSuffix from the View's Scope Box, split the name and get the last integers
+            //string ScopeBoxSuffix = curView.get_Parameter(BuiltInParameter.VIEWER_VOLUME_OF_INTEREST_CROP).AsString();
+            var ScopeBoxSuffix = curView.LookupParameter("Scope Box").AsValueString();
+            // split the scope box name and get the last integers
+            ScopeBoxSuffix = ScopeBoxSuffix.Split(' ').Last();
+
+            // Generate the sheet number
+            string sheetNumber = $"{SheetNumPrefix}-{LevelSuffix}.{ScopeBoxSuffix}";
+
+            return sheetNumber;
         }
 
         public static void SetViewSheetParameterByParameterName(string sheetType, ViewSheet newViewSheet)

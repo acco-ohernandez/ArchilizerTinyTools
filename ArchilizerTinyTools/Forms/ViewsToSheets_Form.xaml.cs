@@ -38,6 +38,7 @@ namespace ArchilizerTinyTools.Forms
             InitializeComponent();
             // Attach the Loaded event handler to set the radio button's properties.
             this.Loaded += ViewsToSheets_Form_Loaded;
+            this.KeyDown += ViewsToSheets_Form_KeyDown; // Add the event handler for the KeyDown event
             this.views = views;
             this.titleBlocksCollector = titleBlocksCollector; // Assign the parameter to the class field
 
@@ -46,6 +47,18 @@ namespace ArchilizerTinyTools.Forms
                                      .Select(view => new ViewInfo(view.Name, view.ViewType, view.Id))
                                      .ToList();
         }
+
+        // add the ability to cancel the form if the user presses the escape key
+        private void ViewsToSheets_Form_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                ResetDataGrid(); // Reset the DataGrid before closing the form
+                this.DialogResult = false;
+                this.Close();
+            }
+        }
+
         private void ViewsToSheets_Form_Loaded(object sender, RoutedEventArgs e)
         {
             // Set the initial state of the radio buttons.
@@ -232,6 +245,5 @@ namespace ArchilizerTinyTools.Forms
             }
         }
         #endregion
-
     }
 }
