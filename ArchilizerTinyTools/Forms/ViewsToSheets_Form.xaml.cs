@@ -30,6 +30,9 @@ namespace ArchilizerTinyTools.Forms
 
         private List<View> views;
         private IEnumerable<FamilySymbol> titleBlocksCollector;
+
+        private List<ViewInfo> originalViewsListInfo; // Add this as a field in your class
+
         public ViewsToSheets_Form(List<View> views, IEnumerable<FamilySymbol> titleBlocksCollector)
         {
             InitializeComponent();
@@ -37,6 +40,11 @@ namespace ArchilizerTinyTools.Forms
             this.Loaded += ViewsToSheets_Form_Loaded;
             this.views = views;
             this.titleBlocksCollector = titleBlocksCollector; // Assign the parameter to the class field
+
+            // Save the original list when initializing or loading data
+            originalViewsListInfo = views.OrderBy(view => view.Name)
+                                     .Select(view => new ViewInfo(view.Name, view.ViewType, view.Id))
+                                     .ToList();
         }
         private void ViewsToSheets_Form_Loaded(object sender, RoutedEventArgs e)
         {
@@ -57,21 +65,23 @@ namespace ArchilizerTinyTools.Forms
             tb_SheetName.Visibility = System.Windows.Visibility.Visible;
         }
 
-        private void btn_Cancel_Click(object sender, RoutedEventArgs e)
-        {
-            this.DialogResult = false;
-            this.Close();
-        }
-
         private void txtSearch_TextChanged(object sender, TextChangedEventArgs e)
         {
             string searchText = txtSearch.Text.ToLower();
 
             // Filter the views based on the search text
-            var filteredViews = views.Cast<View>().Where(view => view.Name.ToLower().Contains(searchText)).ToList();
+            var filteredViewInfos = originalViewsListInfo
+                .Where(viewInfo => viewInfo.Name.ToLower().Contains(searchText))
+                .ToList();
 
             // Update the DataGrid's item source with the filtered views
-            dgViews.ItemsSource = filteredViews.Select(view => view.Name).ToList();
+            this.dgViews.ItemsSource = filteredViewInfos;
+        }
+
+        private void ResetDataGrid()
+        {
+            // Reset the DataGrid to show the original list of views
+            this.dgViews.ItemsSource = originalViewsListInfo;
         }
 
 
@@ -92,6 +102,14 @@ namespace ArchilizerTinyTools.Forms
 
             // Close the form
             Close();
+        }
+
+
+        private void btn_Cancel_Click(object sender, RoutedEventArgs e)
+        {
+            ResetDataGrid(); // Reset the DataGrid before closing the form
+            this.DialogResult = false;
+            this.Close();
         }
 
         // Add methods to get selected views, title block, and title text
@@ -153,28 +171,67 @@ namespace ArchilizerTinyTools.Forms
             e.Handled = true;
         }
 
+
+        #region This section has event handlers to make sure the user makes the necessary selections before clicking OK
         public bool viewsSelected { get; set; }
         public bool titleBlockSelected { get; set; }
         public bool titleTextSelected { get; set; }
+        public bool xIsDouble { get; set; }
+        public bool yIsDouble { get; set; }
 
         private void dgViews_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             viewsSelected = true;
-            if (viewsSelected & titleBlockSelected & titleTextSelected)
+            if (viewsSelected & titleBlockSelected & titleTextSelected & xIsDouble)
                 btn_Ok.IsEnabled = true;
         }
         private void dgTitleBlocks_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             titleBlockSelected = true;
-            if (viewsSelected & titleBlockSelected & titleTextSelected)
+            if (viewsSelected & titleBlockSelected & titleTextSelected & xIsDouble & yIsDouble)
                 btn_Ok.IsEnabled = true;
         }
         private void dgTitleText_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             titleTextSelected = true;
-            if (viewsSelected & titleBlockSelected & titleTextSelected)
+            if (viewsSelected & titleBlockSelected & titleTextSelected & xIsDouble & yIsDouble)
                 btn_Ok.IsEnabled = true;
         }
+        private void txt_X_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            xIsDouble = true;
+            TextBox textBox = (TextBox)sender;
+            if (!double.TryParse(textBox.Text, out double result))
+            {
+                // If the input is not a valid double, you can clear the text or take other action.
+                textBox.Text = ""; // Replace with your desired default value.
+                xIsDouble = false;
+                btn_Ok.IsEnabled = false;
+            }
+            else
+            {
+                if (viewsSelected & titleBlockSelected & titleTextSelected & xIsDouble & yIsDouble)
+                    btn_Ok.IsEnabled = true;
+            }
+        }
+        private void txt_Y_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            yIsDouble = true;
+            TextBox textBox = (TextBox)sender;
+            if (!double.TryParse(textBox.Text, out double result))
+            {
+                // If the input is not a valid double, you can clear the text or take other action.
+                textBox.Text = ""; // Replace with your desired default value.
+                yIsDouble = false;
+                btn_Ok.IsEnabled = false;
+            }
+            else
+            {
+                if (viewsSelected & titleBlockSelected & titleTextSelected & xIsDouble & yIsDouble)
+                    btn_Ok.IsEnabled = true;
+            }
+        }
+        #endregion
 
     }
 }

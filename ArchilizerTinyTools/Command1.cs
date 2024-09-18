@@ -37,8 +37,13 @@ namespace ArchilizerTinyTools
             #region FocusedCode
             try
             {
+
                 // Collect all views in the document
-                var views = new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Views).Cast<View>().ToList();
+                var views = new FilteredElementCollector(doc)
+                    .OfCategory(BuiltInCategory.OST_Views)
+                    .Cast<View>()
+                    .OrderBy(x => x.ViewType)
+                    .ToList();
 
                 // Allow user to dynamically sellect views from a list 
                 List<View> dynamicViewsList = new List<View>();
@@ -46,10 +51,14 @@ namespace ArchilizerTinyTools
                 // dynamicViewsList = GetSelectedViewsList(doc); // C Sharp Form testing
 
                 // Collect all title blocks that are element types
-                var titleBlocksCollector = new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_TitleBlocks).WhereElementIsElementType().Cast<FamilySymbol>().ToList();
+                var titleBlocksCollector = new FilteredElementCollector(doc)
+                    .OfCategory(BuiltInCategory.OST_TitleBlocks)
+                    .WhereElementIsElementType()
+                    .Cast<FamilySymbol>()
+                    .ToList();
 
-                // Find the "30x42" title block by its name
-                var titleBlockId = titleBlocksCollector.Where(t => t.Name == "30x42").First().Id;
+                ////Find the "30x42" title block by its name
+                //var titleBlock = titleBlocksCollector.Where(t => t.Name == "30x42").First().Id;
 
                 FilterRule rule = ParameterFilterRuleFactory.CreateEqualsRule(new ElementId((int)BuiltInParameter.SYMBOL_FAMILY_NAME_PARAM), "Viewport", false);
                 ElementParameterFilter filter = new ElementParameterFilter(rule);
@@ -60,30 +69,74 @@ namespace ArchilizerTinyTools
                 // Selections Form
                 var viewsForm = new ViewsToSheets_Form(views, titleBlocksCollector);
 
-                viewsForm.dgViews.ItemsSource = views.Cast<View>().Select(view => view.Name).ToList();
-                viewsForm.dgTitleBlocks.ItemsSource = titleBlocksCollector.Cast<FamilySymbol>().Select(tblock => tblock.Name).ToList();
-                viewsForm.dgTitleText.ItemsSource = viewPortFamilyTypes.Cast<Element>().Select(vpt => vpt.Name).ToList();
+                var viewInfos = views.OrderBy(x => x.ViewType)
+                                     .Select(view => new ViewInfo(view.Name, view.ViewType, view.Id))
+                                     .ToList();
+
+                viewsForm.dgViews.ItemsSource = viewInfos;
+
+                // Get list of unique "Sheet Type" values from ViewSheet parameters and send to the viewsForm
+                viewsForm.cmb_SheetTypes.ItemsSource = GetSheetTypesList(doc);
+
+                //viewsForm.dgViews.ItemsSource = views.Cast<View>().Select(view => view.Name).ToList();
+
+                //viewsForm.dgTitleBlocks.ItemsSource = titleBlocksCollector.Cast<FamilySymbol>().OrderBy(x => x.Name).Select(tblock => tblock.Name).ToList();
+
+                var titleBlocksInfo = titleBlocksCollector.OrderBy(tb => tb.FamilyName)
+                                                                          .Select(titleBlock => new TitleBlockInfo(titleBlock))
+                                                                          .ToList();
+                viewsForm.dgTitleBlocks.ItemsSource = titleBlocksInfo;
+
+                viewsForm.dgTitleText.ItemsSource = viewPortFamilyTypes.Cast<Element>().OrderBy(x => x.Name).Select(vpt => vpt.Name).ToList();
                 // Show the form
                 viewsForm.ShowDialog();
 
-                var sheetsCreated = new List<ViewSheet>();
+                //var sheetsCreated = new List<ViewSheet>();
+                var sheetsCreated = new Dictionary<ViewSheet, List<Viewport>>();
 
                 // Check if the user doesn't click OK
                 if (viewsForm.DialogResult != true)
                     return Result.Cancelled;
 
                 // Get the selected views
-                List<View> selectedViews = viewsForm.SelectedViews;
+                //List<View> selectedViews = viewsForm.SelectedViews;
+                // Get the selected ViewInfo objects
+                List<ViewInfo> selectedViewInfos = viewsForm.dgViews.SelectedItems.Cast<ViewInfo>().ToList();
+
+                // Extract the corresponding View objects from the original list
+                List<View> selectedViews = selectedViewInfos
+                    .Select(viewInfo => views.FirstOrDefault(view => view.Id == viewInfo.Id))
+                    .Where(view => view != null)
+                    .ToList();
+
 
                 // Get the selected title block
-                FamilySymbol selectedTitleBlock = viewsForm.SelectedTitleBlock;
+                var stb = viewsForm.dgTitleBlocks.SelectedItem as FamilySymbol;
+
+                //FamilySymbol selectedTitleBlock = viewsForm.SelectedTitleBlock;
+                // Assuming you have a DataGrid named dgTitleBlocks in your form
+                //TitleBlockInfo selectedTitleBlockInfo = viewsForm.dgTitleBlocks.SelectedItem as TitleBlockInfo;
+                FamilySymbol selectedTitleBlock = (viewsForm.dgTitleBlocks.SelectedItem as TitleBlockInfo).TitleBlockSymbol;
+
+
+
+
+                // Get the Sheet Type to use for new sheets
+                var selectedSheetType = viewsForm.cmb_SheetTypes.Text;
+                if (selectedSheetType == "")
+                    selectedSheetType = "NEW SHEETS CREATED";
+
 
                 // Get the selected title text
                 var selectedTitleText = viewsForm.SelectedTitleText;
                 var elem = viewPortFamilyTypes.Cast<Element>().First(i => i.Name == selectedTitleText);
 
+
+                double txt_X = ParseTxtToDouble(viewsForm.txt_X.Text);
+                double txt_Y = ParseTxtToDouble(viewsForm.txt_Y.Text);
+
                 // Location to place the view port
-                var xyzPoint = new XYZ(1, 1, 0);
+                var xyzPoint = new XYZ(txt_X, txt_Y, 0);
 
                 // This bool "oneToOne" will determine if one sheet should be created per each curView
                 // if set to false, all selected views are going to be put into one sheet.
@@ -94,14 +147,19 @@ namespace ArchilizerTinyTools
                 using (Transaction t = new Transaction(doc))
                 {
                     t.Start("Create Sheets and Viewports");
-                    //sheetsCreated = CreateSheetsFromViews(doc, selectedViews, titleBlockId, xyzPoint, oneToOne);
-                    sheetsCreated = CreateSheetsFromViews(doc, selectedViews, selectedTitleBlock.Id, xyzPoint, oneToOne, MultipleViewsSheetName, elem.Id);
+                    //sheetsCreated = CreateSheetsFromViews(doc, selectedViews, titleBlock, xyzPoint, oneToOne);
+                    //sheetsCreated = CreateSheetsFromViews(doc, selectedViews, selectedTitleBlock.Id, xyzPoint, oneToOne, MultipleViewsSheetName, elem.Id);
+                    sheetsCreated = CreateSheetsFromViews(doc, selectedViews, selectedTitleBlock, xyzPoint, oneToOne, MultipleViewsSheetName, elem.Id, selectedSheetType);
                     t.Commit();
                 }
 
+                //place a the new Viewports on each Sheet at a specific position relative to the title block's bounding box
+                //RelocateViewportsOnSheets(doc, sheetsCreated, xyzPoint); // Method not implemented
+
                 // Display the sheet names
-                TaskDialog.Show("Info", $"View Sheets Created: {sheetsCreated.Count()}\n" +
-                                        $"{string.Join("\n", sheetsCreated.Select(s => s.Name))}");
+                //TaskDialog.Show("Info", $"View Sheets Created: {sheetsCreated.Count()}\n" +
+                //                        $"{string.Join("\n", sheetsCreated.Select(s => s.Name))}");
+                TaskDialog.Show("Info", $"View Sheets Created: {sheetsCreated.Count()}");
                 #endregion
 
             }
@@ -110,95 +168,356 @@ namespace ArchilizerTinyTools
             return Result.Succeeded;
         }
 
-        public List<View> GetSelectedViewsList(Document doc)
+        public static List<string> GetSheetTypesList(Document doc)
         {
-            List<View> selectedViews = new List<View>();
-
-            // Create a new WPF window
-            Window viewSelectionWindow = new Window
-            {
-                Title = "Select Views for Sheets",
-                Width = 300,
-                Height = 300
-            };
-
-            // Create a ListBox for view selection
-            ListBox viewListBox = new ListBox
-            {
-                SelectionMode = SelectionMode.Multiple
-            };
-
-            // This code filters out views that are of type ViewTemplate
-            var views = new FilteredElementCollector(doc)
-                           .OfCategory(BuiltInCategory.OST_Views)
-                           .Cast<View>()
-                           .Where(v => !v.IsTemplate)
-                           .OrderBy(v => v.ViewType)
-                           .ThenBy(v => v.Name);
-
-
-            foreach (var view in views)
-            {
-                viewListBox.Items.Add(view.Name);
-            }
-
-            // Create a button for confirming the selection
-            Button okButton = new Button
-            {
-                Content = "OK",
-                Width = 80
-            };
-
-            // Handle button click
-            okButton.Click += (sender, e) =>
-            {
-                foreach (var item in viewListBox.SelectedItems)
-                {
-                    string viewName = item.ToString();
-                    var selectedView = views.Cast<View>().FirstOrDefault(v => v.Name == viewName);
-                    if (selectedView != null)
-                    {
-                        selectedViews.Add(selectedView);
-                    }
-                }
-
-                // Close the window
-                viewSelectionWindow.Close();
-            };
-
-            // Create a StackPanel to arrange controls
-            StackPanel stackPanel = new StackPanel();
-            stackPanel.Children.Add(viewListBox);
-            stackPanel.Children.Add(okButton);
-
-            // Set the content of the window to the stack panel
-            viewSelectionWindow.Content = stackPanel;
-
-            // Show the window as a dialog
-            viewSelectionWindow.ShowDialog();
-
-            return selectedViews;
+            // Get list of unique "Sheet Type" values from ViewSheet parameters.
+            var sheetTypeDefinitionsList = new FilteredElementCollector(doc)
+                                            .OfClass(typeof(ViewSheet))
+                                            .WhereElementIsNotElementType()
+                                            .Cast<ViewSheet>()
+                                            .SelectMany(sheet => sheet.Parameters.Cast<Parameter>())
+                                            .Where(parameter => parameter.Definition.Name == "Sheet Type")
+                                            .Select(parameter => parameter.AsString())
+                                            .Distinct()
+                                            .ToList();
+            return sheetTypeDefinitionsList;
         }
 
-        List<ViewSheet> CreateSheetsFromViews(Document doc, List<View> viewList, ElementId titleBlockId, XYZ xyzPoint, bool oneToOne, string multipleViewsSheetName, ElementId textTypeId)
+        Dictionary<ViewSheet, List<Viewport>> CreateSheetsFromViews(Document doc, List<View> viewList, FamilySymbol titleBlock, XYZ xyzPoint, bool oneToOne, string multipleViewsSheetName, ElementId textTypeId, string sheetType)
         {
-            var viewSheetCreated = new List<ViewSheet>();
+            // Check if a new location is set
+            bool newLocationSet = xyzPoint != XYZ.Zero;
+            XYZ xyzInchesPoint = newLocationSet ? xyzPoint / 12 : null;
+
+            // Dictionary to store created ViewSheets and associated Viewports
+            var viewSheetCreated = new Dictionary<ViewSheet, List<Viewport>>();
+
+            // Create sheets based on the specified mode (one-to-one or one sheet for all views)
             if (oneToOne)
             {
                 foreach (var curView in viewList)
                 {
                     try
                     {
+                        // Temporary list for viewports to be returned
+                        var viewPortsCreated = new List<Viewport>();
+
+                        // Create a new sheet
+                        var newViewSheet = ViewSheet.Create(doc, titleBlock.Id);
+                        newViewSheet.Name = curView.Name;
+
+                        // Set the Sheet Type for the newViewSheet
+                        SetViewSheetParameterByParameterName(sheetType, newViewSheet);
+                        //if (!string.IsNullOrEmpty(sheetType))
+                        //{
+                        //    Parameter sheetTypeParameter = newViewSheet.LookupParameter("Sheet Type");
+                        //    if (sheetTypeParameter != null)
+                        //    {
+                        //        sheetTypeParameter.Set(sheetType);
+                        //    }
+                        //}
+
+                        // Get the center of the title block's bounding box
+                        XYZ titleBlockCenter = GetCenterOfBoundingBox(titleBlock.get_BoundingBox(newViewSheet));
+
+                        // Adjust the title block center if a new location is set
+                        if (newLocationSet)
+                            titleBlockCenter += xyzInchesPoint;
+
+                        // Create a new viewport on the new sheet and place the curView
+                        var newViewPort = Viewport.Create(doc, newViewSheet.Id, curView.Id, titleBlockCenter);
+                        if (newViewPort != null)
+                        {
+                            // If the viewPort is not null, change its type to the specified text type
+                            newViewPort.ChangeTypeId(textTypeId);
+                            viewPortsCreated.Add(newViewPort);
+                        }
+
+                        // Add the new sheet and associated viewports to the dictionary
+                        viewSheetCreated.Add(newViewSheet, viewPortsCreated);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.Print($"Error: ==> {curView.Name} {curView.Id} \n{e.Message}");
+                    }
+                }
+            }
+            else // Create a single View Sheet for all views
+            {
+                var newViewSheet = ViewSheet.Create(doc, titleBlock.Id);
+                newViewSheet.Name = multipleViewsSheetName;
+
+                // Set the Sheet Type for the newViewSheet
+                SetViewSheetParameterByParameterName(sheetType, newViewSheet);
+
+                // Get the center of the title block's bounding box
+                XYZ titleBlockCenter = GetCenterOfBoundingBox(titleBlock.get_BoundingBox(newViewSheet));
+
+                // Adjust the title block center if a new location is set
+                if (newLocationSet)
+                    titleBlockCenter += xyzInchesPoint;
+
+                // Temporary list for viewports to be returned
+                var viewPortsCreated = new List<Viewport>();
+
+                foreach (var curView in viewList)
+                {
+                    try
+                    {
+                        // Create a new viewport on the new sheet for each view
+                        var newViewPort = Viewport.Create(doc, newViewSheet.Id, curView.Id, titleBlockCenter);
+                        if (newViewPort != null)
+                        {
+                            // If the viewPort is not null, change its type to the specified text type
+                            newViewPort.ChangeTypeId(textTypeId);
+                            viewPortsCreated.Add(newViewPort);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.Print($"Error: ==> {curView.Name} {curView.Id} \n{e.Message}");
+                    }
+                }
+
+                // Add the new sheet and associated viewports to the dictionary
+                viewSheetCreated.Add(newViewSheet, viewPortsCreated);
+            }
+
+            return viewSheetCreated;
+        }
+
+        public static void SetViewSheetParameterByParameterName(string sheetType, ViewSheet newViewSheet)
+        {
+            // Set the Sheet Type for the newViewSheet
+            if (!string.IsNullOrEmpty(sheetType))
+            {
+                Parameter sheetTypeParameter = newViewSheet.LookupParameter("Sheet Type");
+                if (sheetTypeParameter != null)
+                {
+                    sheetTypeParameter.Set(sheetType);
+                }
+            }
+        }
+
+        Dictionary<ViewSheet, List<Viewport>> CreateSheetsFromViews4(Document doc, List<View> viewList, FamilySymbol titleBlock, XYZ xyzPoint, bool oneToOne, string multipleViewsSheetName, ElementId textTypeId, string sheetType)
+        {
+            // Check if a new location is set
+            bool newLocationSet = xyzPoint != XYZ.Zero;
+            XYZ xyzInchesPoint = newLocationSet ? xyzPoint / 12 : null;
+
+            // Dictionary to store created ViewSheets and associated Viewports
+            var viewSheetCreated = new Dictionary<ViewSheet, List<Viewport>>();
+
+            // Create sheets based on the specified mode (one-to-one or one sheet for all views)
+            if (oneToOne)
+            {
+                foreach (var curView in viewList)
+                {
+                    try
+                    {
+                        // Temporary list for viewports to be returned
+                        var viewPortsCreated = new List<Viewport>();
+
+                        // Create a new sheet
+                        var newViewSheet = ViewSheet.Create(doc, titleBlock.Id);
+                        newViewSheet.Name = curView.Name;
+
+                        // Set the Sheet Type for the newViewSheet
+
+                        // Get the center of the title block's bounding box
+                        XYZ titleBlockCenter = GetCenterOfBoundingBox(titleBlock.get_BoundingBox(newViewSheet));
+
+                        // Adjust the title block center if a new location is set
+                        if (newLocationSet)
+                            titleBlockCenter += xyzInchesPoint;
+
+                        // Create a new viewport on the new sheet and place the curView
+                        var newViewPort = Viewport.Create(doc, newViewSheet.Id, curView.Id, titleBlockCenter);
+                        if (newViewPort != null)
+                        {
+                            // If the viewPort is not null, change its type to the specified text type
+                            newViewPort.ChangeTypeId(textTypeId);
+                            viewPortsCreated.Add(newViewPort);
+                        }
+
+                        // Add the new sheet and associated viewports to the dictionary
+                        viewSheetCreated.Add(newViewSheet, viewPortsCreated);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.Print($"Error: ==> {curView.Name} {curView.Id} \n{e.Message}");
+                    }
+                }
+            }
+            else // Create a single View Sheet for all views
+            {
+                var newViewSheet = ViewSheet.Create(doc, titleBlock.Id);
+                newViewSheet.Name = multipleViewsSheetName;
+
+                // Set the Sheet Type for the newViewSheet
+
+
+                // Get the center of the title block's bounding box
+                XYZ titleBlockCenter = GetCenterOfBoundingBox(titleBlock.get_BoundingBox(newViewSheet));
+
+                // Adjust the title block center if a new location is set
+                if (newLocationSet)
+                    titleBlockCenter += xyzInchesPoint;
+
+                // Temporary list for viewports to be returned
+                var viewPortsCreated = new List<Viewport>();
+
+                foreach (var curView in viewList)
+                {
+                    try
+                    {
+                        // Create a new viewport on the new sheet for each view
+                        var newViewPort = Viewport.Create(doc, newViewSheet.Id, curView.Id, titleBlockCenter);
+                        if (newViewPort != null)
+                        {
+                            // If the viewPort is not null, change its type to the specified text type
+                            newViewPort.ChangeTypeId(textTypeId);
+                            viewPortsCreated.Add(newViewPort);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.Print($"Error: ==> {curView.Name} {curView.Id} \n{e.Message}");
+                    }
+                }
+
+                // Add the new sheet and associated viewports to the dictionary
+                viewSheetCreated.Add(newViewSheet, viewPortsCreated);
+            }
+
+            return viewSheetCreated;
+        }
+
+        XYZ GetCenterOfBoundingBox(BoundingBoxXYZ boundingBox)
+        {
+            // Helper method to get the center of a bounding box
+            return 0.5 * (boundingBox.Min + boundingBox.Max);
+        }
+
+        Dictionary<ViewSheet, List<Viewport>> CreateSheetsFromViews3(Document doc, List<View> viewList, FamilySymbol titleBlock, XYZ xyzPoint, bool oneToOne, string multipleViewsSheetName, ElementId textTypeId)
+        {
+            bool newLocationSet = false;
+            XYZ xyzInchesPoint = null;
+            if (xyzPoint != new XYZ(0.0, 0.0, 0.0))
+            {
+                newLocationSet = true;
+                xyzInchesPoint = xyzPoint / 12;
+            }
+
+            //var viewSheetCreated = new List<ViewSheet>();
+            var viewSheetCreated = new Dictionary<ViewSheet, List<Viewport>>();
+            if (oneToOne) // Create a one sheet for each view
+            {
+                foreach (var curView in viewList)
+                {
+                    try
+                    {
+                        // Temporary list for viewports to be retruned
+                        var viewPortsCreated = new List<Viewport>();
+
+                        // Create a new sheet
+                        var newViewSheet = ViewSheet.Create(doc, titleBlock.Id);
+                        newViewSheet.Name = curView.Name;
+                        //viewSheetCreated.Add(newViewSheet);
+
+                        XYZ titleBlockCenter = GetCenterOfBoundingBox(titleBlock.get_BoundingBox(newViewSheet));
+                        // if new location has been enter add it to the titleBlockCenter
+                        if (newLocationSet)
+                            titleBlockCenter = titleBlockCenter + xyzInchesPoint;
+
+                        // Create a new viewport on the new sheet and place the curView
+                        //var newViewPort = Viewport.Create(doc, newViewSheet.Id, curView.Id, xyzPoint);
+                        var newViewPort = Viewport.Create(doc, newViewSheet.Id, curView.Id, titleBlockCenter);
+                        List<ElementId> newElemId = new List<ElementId>() { textTypeId };
+                        if (newViewPort != null) // If the viewPort is null, doesnt have any drawings, don't attempt to add a family type
+                        {
+                            newViewPort.ChangeTypeId(textTypeId);
+                            viewPortsCreated.Add(newViewPort);
+                        }
+
+                        viewSheetCreated.Add(newViewSheet, viewPortsCreated);
+
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.Print($"Error: ==> {curView.Name} {curView.Id} \n{e.Message}");
+                    }
+
+                }
+            }
+            else
+            {
+                // Create a single View Sheet for all views
+                var newViewSheet = ViewSheet.Create(doc, titleBlock.Id);
+                newViewSheet.Name = multipleViewsSheetName; // You can set any desired name
+
+                XYZ titleBlockCenter = GetCenterOfBoundingBox(titleBlock.get_BoundingBox(newViewSheet));
+                if (newLocationSet)
+                    titleBlockCenter = titleBlockCenter + xyzInchesPoint;
+
+                // Temporary list for viewports to be retruned
+                var viewPortsCreated = new List<Viewport>();
+
+                foreach (var curView in viewList)
+                {
+                    try
+                    {
+
+                        // Create a new viewport on the new sheet for each view
+                        //var newViewPort = Viewport.Create(doc, newViewSheet.Id, curView.Id, xyzPoint);
+                        var newViewPort = Viewport.Create(doc, newViewSheet.Id, curView.Id, titleBlockCenter);
+                        if (newViewPort != null) // If the viewPort is null, doesnt have any drawings, don't attempt to add a family type
+                        {
+                            newViewPort.ChangeTypeId(textTypeId);
+                            viewPortsCreated.Add(newViewPort);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.Print($"Error: ==> {curView.Name} {curView.Id} \n{e.Message}");
+                    }
+                }
+
+                viewSheetCreated.Add(newViewSheet, viewPortsCreated);
+            }
+
+            return viewSheetCreated;
+        }
+
+        Dictionary<ViewSheet, List<Viewport>> CreateSheetsFromViews2(Document doc, List<View> viewList, ElementId titleBlockId, XYZ xyzPoint, bool oneToOne, string multipleViewsSheetName, ElementId textTypeId)
+        {
+            //var viewSheetCreated = new List<ViewSheet>();
+            var viewSheetCreated = new Dictionary<ViewSheet, List<Viewport>>();
+            if (oneToOne)
+            {
+                foreach (var curView in viewList)
+                {
+                    try
+                    {
+                        // Temporary list for viewports to be retruned
+                        var viewPortsCreated = new List<Viewport>();
+
                         // Create a new sheet
                         var newViewSheet = ViewSheet.Create(doc, titleBlockId);
                         newViewSheet.Name = curView.Name;
-                        viewSheetCreated.Add(newViewSheet);
+                        //viewSheetCreated.Add(newViewSheet);
 
                         // Create a new viewport on the new sheet and place the curView
                         var newViewPort = Viewport.Create(doc, newViewSheet.Id, curView.Id, xyzPoint);
                         List<ElementId> newElemId = new List<ElementId>() { textTypeId };
                         if (newViewPort != null) // If the viewPort is null, doesnt have any drawings, don't attempt to add a family type
+                        {
                             newViewPort.ChangeTypeId(textTypeId);
+                            viewPortsCreated.Add(newViewPort);
+                        }
+
+                        viewSheetCreated.Add(newViewSheet, viewPortsCreated);
+
                     }
                     catch (Exception e)
                     {
@@ -213,14 +532,21 @@ namespace ArchilizerTinyTools
                 var newViewSheet = ViewSheet.Create(doc, titleBlockId);
                 newViewSheet.Name = multipleViewsSheetName; // You can set any desired name
 
+                // Temporary list for viewports to be retruned
+                var viewPortsCreated = new List<Viewport>();
+
                 foreach (var curView in viewList)
                 {
                     try
                     {
+
                         // Create a new viewport on the new sheet for each view
                         var newViewPort = Viewport.Create(doc, newViewSheet.Id, curView.Id, xyzPoint);
                         if (newViewPort != null) // If the viewPort is null, doesnt have any drawings, don't attempt to add a family type
+                        {
                             newViewPort.ChangeTypeId(textTypeId);
+                            viewPortsCreated.Add(newViewPort);
+                        }
                     }
                     catch (Exception e)
                     {
@@ -228,10 +554,70 @@ namespace ArchilizerTinyTools
                     }
                 }
 
-                viewSheetCreated.Add(newViewSheet);
+                viewSheetCreated.Add(newViewSheet, viewPortsCreated);
             }
 
             return viewSheetCreated;
+        }
+
+        void RelocateViewportsOnSheets(Document doc, Dictionary<ViewSheet, List<Viewport>> sheetsCreated, XYZ location)
+        {
+            foreach (var kvp in sheetsCreated)
+            {
+                ViewSheet sheet = kvp.Key;
+                List<Viewport> viewports = kvp.Value;
+
+                // Get the title block on the sheet
+                FamilyInstance titleBlockInstance = new FilteredElementCollector(doc, sheet.Id)
+                    .OfCategory(BuiltInCategory.OST_TitleBlocks)
+                    .Cast<FamilyInstance>()
+                    .FirstOrDefault();
+
+                if (titleBlockInstance != null)
+                {
+                    // Get the title block's bounding box
+                    BoundingBoxXYZ titleBlockBoundingBox = titleBlockInstance.get_BoundingBox(sheet);
+
+
+                    if (titleBlockBoundingBox != null)
+                    {
+                        var titleBlockBoundingBoxMin = titleBlockBoundingBox.Min;
+                        var titleBlockBoundingBoxMax = titleBlockBoundingBox.Max;
+                        XYZ titleBlockCenter = 0.5 * (titleBlockBoundingBoxMin + titleBlockBoundingBoxMax);
+                        //XYZ titleBlockCenter = 0.5 * (titleBlockBoundingBox.Min + titleBlockBoundingBox.Max);
+
+                        // Calculate the offset for moving viewports to the center of the title block
+                        XYZ offset = location - titleBlockCenter;
+
+                        using (Transaction t = new Transaction(doc))
+                        {
+                            t.Start("Relocate Viewports");
+
+                            // Move each viewport to the center of the title block
+                            foreach (Viewport viewport in viewports)
+                            {
+                                XYZ viewportLocation = viewport.GetBoxCenter();
+
+                                // Move the viewport to the new location
+                                //ElementTransformUtils.MoveElement(doc, viewport.Id, offset);
+                                ElementTransformUtils.MoveElement(doc, viewport.Id, titleBlockCenter);
+                            }
+
+                            t.Commit();
+                        }
+                    }
+                }
+            }
+        }
+
+        double ParseTxtToDouble(string stringNumber)
+        {
+            string numberString = stringNumber; // Replace with your string
+            double number;
+            Double.TryParse(numberString, out number);
+
+            // 'number' now contains the double value.
+            return number;
         }
 
         internal static PushButtonData GetButtonData()
@@ -249,6 +635,35 @@ namespace ArchilizerTinyTools
                 "Create new sheets from selected views");
 
             return myButtonData1.Data;
+        }
+    }
+
+
+    public class ViewInfo
+    {
+        public string Name { get; set; }
+        public ViewType ViewType { get; set; }
+        public ElementId Id { get; set; } // Add this property
+
+        public ViewInfo(string name, ViewType viewType, ElementId id)
+        {
+            Name = name;
+            ViewType = viewType;
+            Id = id;
+        }
+    }
+
+    public class TitleBlockInfo
+    {
+        public FamilySymbol TitleBlockSymbol { get; set; }
+        public string TitleBlockName { get; set; }
+        public string FamilyName { get; set; }
+
+        public TitleBlockInfo(FamilySymbol titleBlockName)
+        {
+            TitleBlockSymbol = titleBlockName;
+            TitleBlockName = titleBlockName.Name;
+            FamilyName = titleBlockName.FamilyName;
         }
     }
 }

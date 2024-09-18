@@ -7,17 +7,18 @@
         mc:Ignorable="d"
         Title="ViewsToSheets_Form" 
         Height="500" 
-        Width="900" 
+        Width="1200" 
         MinWidth="450" 
         MinHeight="450"
+        WindowStartupLocation="CenterScreen"
         >
 
-    <Grid Width="auto">
+    <Grid Width="auto" Margin="15">
         <!-- RowDefinitions -->
         <Grid.RowDefinitions>
             <RowDefinition Height="40" />
             <RowDefinition Height="30" />
-            <RowDefinition Height="30" />
+            <RowDefinition Height="40" />
             <RowDefinition Height="*" />
             <RowDefinition Height="90" />
         </Grid.RowDefinitions>
@@ -32,9 +33,17 @@
         <Label Grid.Row="1" Content="Make your selections" x:Name="lbl_DatagridLabel" FontSize="12" />
 
         <!-- Row [2] -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,5">
+        <StackPanel Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10,5">
             <TextBlock Text="Search Views: " VerticalAlignment="Center"/>
             <TextBox x:Name="txtSearch" Width="200" VerticalAlignment="Center" Margin="5,0" TextChanged="txtSearch_TextChanged"/>
+        </StackPanel>
+        <StackPanel Grid.Row="2"  Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="10,5">
+            <Label Content="Inches from center of sheet: X" />
+            <TextBox x:Name="txt_X" Text="0.0" Width="auto" MinWidth="15" MaxWidth="30" VerticalAlignment="Center" Margin="1,0" TextChanged="txt_X_TextChanged"/>
+            <Label Content="Y" />
+            <TextBox x:Name="txt_Y" Text="0.0" Width="auto" MinWidth="15" MaxWidth="30" VerticalAlignment="Center" Margin="1,0" TextChanged="txt_Y_TextChanged" />
+            <Label Content="Z" />
+            <TextBox x:Name="txt_Z" Text="0.0" Width="auto" MinWidth="15" MaxWidth="30" VerticalAlignment="Center" Margin="1,0" IsEnabled="False"/>
         </StackPanel>
 
         <!-- Row [3] -->
@@ -55,9 +64,11 @@
                           Margin="10,10,10,62"
                           MouseDoubleClick="dg_MouseDoubleClick" 
                           SelectionChanged="dgViews_SelectionChanged"
+                          IsReadOnly="True"
                           >
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Views (Multi Select)" Binding="{Binding Mode=OneWay}"/>
+                        <DataGridTextColumn Header="View Type" Binding="{Binding ViewType}" />
+                        <DataGridTextColumn Header="View Name" Binding="{Binding Name}" />
                     </DataGrid.Columns>
                 </DataGrid>
             </ScrollViewer>
@@ -78,9 +89,11 @@
                           Margin="10,10,10,62"
                           MouseDoubleClick="dg_MouseDoubleClick"
                           SelectionChanged="dgTitleBlocks_SelectionChanged"
+                          IsReadOnly="True"
                 >
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="TitleBlocks (Single Select)" Binding="{Binding Mode=OneWay}"/>
+                        <DataGridTextColumn Header="TitleBlocks (Single Select)" Binding="{Binding TitleBlockName}"/>
+                        <DataGridTextColumn Header="FamilyName" Binding="{Binding FamilyName}"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </ScrollViewer>
@@ -101,6 +114,7 @@
                           Margin="10,10,10,62"
                           MouseDoubleClick="dg_MouseDoubleClick" 
                           SelectionChanged="dgTitleText_SelectionChanged"
+                          IsReadOnly="True"
                 >
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Title Text (Single Select)" Binding="{Binding Mode=OneWay}" />
@@ -114,14 +128,19 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <StackPanel Orientation="Vertical" Grid.Column="0" Margin="3">
+            <StackPanel Orientation="Vertical" Grid.Column="0" Margin="3" Width="auto">
                 <RadioButton x:Name="rb_OneToOne" Content="Views to multiple sheets" Checked="rb_OneToOne_Checked"/>
                 <RadioButton x:Name="rb_SigleSheet" Content="Views to single sheet" Checked="rb_SigleSheet_Checked"/>
                 <Label x:Name="lbl_SheetName" Content="Sheet Name: " Visibility="Hidden"/>
                 <TextBox x:Name="tb_SheetName" Text="Multiple Views Sheet" Height="30" Visibility="Hidden"/>
             </StackPanel>
-            <StackPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Right" Margin="3">
+            <StackPanel Orientation="Vertical" Grid.Column="1" HorizontalAlignment="Center" Width="auto">
+                <Label x:Name="lbl_SheeType" Content="Sheet Type"/>
+                <ComboBox x:Name="cmb_SheetTypes" IsEditable="True" Width="300"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Grid.Column="2" HorizontalAlignment="Right" Margin="3" Width="auto">
                 <Button x:Name="btn_Ok" Content="OK" Height="30" Width="90"  Margin="0,0,10,0" IsEnabled="False" Click="btn_Ok_Click" />
                 <Button x:Name="btn_Cancel" Content="Cancel" Height="30" Width="90" Click="btn_Cancel_Click"/>
             </StackPanel>
