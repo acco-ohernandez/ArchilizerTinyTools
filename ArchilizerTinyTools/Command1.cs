@@ -39,7 +39,11 @@ namespace ArchilizerTinyTools
             {
 
                 // Collect all views in the document
-                var views = new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Views).Cast<View>().OrderBy(x => x.ViewType).ToList();
+                var views = new FilteredElementCollector(doc)
+                    .OfCategory(BuiltInCategory.OST_Views)
+                    .Cast<View>()
+                    .OrderBy(x => x.ViewType)
+                    .ToList();
 
                 // Allow user to dynamically sellect views from a list 
                 List<View> dynamicViewsList = new List<View>();
@@ -47,7 +51,11 @@ namespace ArchilizerTinyTools
                 // dynamicViewsList = GetSelectedViewsList(doc); // C Sharp Form testing
 
                 // Collect all title blocks that are element types
-                var titleBlocksCollector = new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_TitleBlocks).WhereElementIsElementType().Cast<FamilySymbol>().ToList();
+                var titleBlocksCollector = new FilteredElementCollector(doc)
+                    .OfCategory(BuiltInCategory.OST_TitleBlocks)
+                    .WhereElementIsElementType()
+                    .Cast<FamilySymbol>()
+                    .ToList();
 
                 ////Find the "30x42" title block by its name
                 //var titleBlock = titleBlocksCollector.Where(t => t.Name == "30x42").First().Id;
@@ -610,7 +618,6 @@ namespace ArchilizerTinyTools
 
             // 'number' now contains the double value.
             return number;
-
         }
 
         internal static PushButtonData GetButtonData()
