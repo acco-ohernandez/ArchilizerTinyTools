@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:ArchilizerTinyTools.Forms"
         mc:Ignorable="d"
         Title="ViewsToSheets_Form" 
-        Height="500" 
+        Height="600" 
         Width="1200" 
         MinWidth="450" 
         MinHeight="450"

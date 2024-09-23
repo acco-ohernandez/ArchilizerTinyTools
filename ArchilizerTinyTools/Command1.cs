@@ -3,8 +3,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -21,7 +23,6 @@ using Autodesk.Revit.UI.Selection;
 
 using Forms = System.Windows.Forms;
 using View = Autodesk.Revit.DB.View;
-
 #endregion
 
 namespace ArchilizerTinyTools
@@ -29,6 +30,9 @@ namespace ArchilizerTinyTools
     [Transaction(TransactionMode.Manual)]
     public class Command1 : IExternalCommand
     {
+        private List<string> failedViewsToSheets;
+        public static Document Doc;
+
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
             // this is a variable for the Revit application
@@ -36,6 +40,11 @@ namespace ArchilizerTinyTools
 
             // this is a variable for the current Revit model
             Document doc = uiapp.ActiveUIDocument.Document;
+            Doc = doc;
+
+            // if the failedViewsToSheets is null, create a new list, if not clear the list
+            failedViewsToSheets = failedViewsToSheets ?? new List<string>();
+            failedViewsToSheets.Clear();
 
             #region FocusedCode
             try
@@ -94,7 +103,7 @@ namespace ArchilizerTinyTools
 
                 viewsForm.dgTitleText.ItemsSource = viewPortFamilyTypes.Cast<Element>().OrderBy(x => x.Name).Select(vpt => vpt.Name).ToList();
                 // Show the form
-                viewsForm.ShowDialog();
+                viewsForm.ShowDialog(); // <----------------------------------- The Form is shown here
 
                 //var sheetsCreated = new List<ViewSheet>();
                 var sheetsCreated = new Dictionary<ViewSheet, List<Viewport>>();
@@ -123,8 +132,8 @@ namespace ArchilizerTinyTools
                 //TitleBlockInfo selectedTitleBlockInfo = viewsForm.dgTitleBlocks.SelectedItem as TitleBlockInfo;
                 FamilySymbol selectedTitleBlock = (viewsForm.dgTitleBlocks.SelectedItem as TitleBlockInfo).TitleBlockSymbol;
 
-
-
+                // Get the selected Sheet Name Standard
+                string selectedSheetNameStandard = viewsForm.cmb_SheetNameStandards.Text;
 
                 // Get the Sheet Type to use for new sheets
                 var selectedSheetType = viewsForm.cmb_SheetTypes.Text;
@@ -154,7 +163,7 @@ namespace ArchilizerTinyTools
                     t.Start("Create Sheets and Viewports");
                     //sheetsCreated = CreateSheetsFromViews(doc, selectedViews, titleBlock, xyzPoint, oneToOne);
                     //sheetsCreated = CreateSheetsFromViews(doc, selectedViews, selectedTitleBlock.Id, xyzPoint, oneToOne, MultipleViewsSheetName, elem.Id);
-                    sheetsCreated = CreateSheetsFromViews(doc, selectedViews, selectedTitleBlock, xyzPoint, oneToOne, MultipleViewsSheetName, elem.Id, selectedSheetType);
+                    sheetsCreated = CreateSheetsFromViews(doc, selectedViews, selectedTitleBlock, xyzPoint, oneToOne, MultipleViewsSheetName, elem.Id, selectedSheetType, selectedSheetNameStandard);
                     t.Commit();
                 }
 
@@ -164,7 +173,14 @@ namespace ArchilizerTinyTools
                 // Display the sheet names
                 //TaskDialog.Show("Info", $"View Sheets Created: {sheetsCreated.Count()}\n" +
                 //                        $"{string.Join("\n", sheetsCreated.Select(s => s.Name))}");
-                TaskDialog.Show("Info", $"View Sheets Created: {sheetsCreated.Count()}");
+
+                // if the failedViewsToSheets list is not empty, add each entry to a string new line
+
+                string failedViewsToSheetsString = failedViewsToSheets.Count > 0 ? $"\n--- {failedViewsToSheets.Count} Views not added to sheets ---\n" + string.Join("\n", failedViewsToSheets) : "\nSuccess!";
+
+
+                TaskDialog.Show("Info", $"View Sheets Created: {sheetsCreated.Count()}" +
+                                             $"{failedViewsToSheetsString}");
                 #endregion
 
             }
@@ -199,30 +215,64 @@ namespace ArchilizerTinyTools
             return new Tuple<string, string>(browserCategory, browserSubCategory);
         }
 
-        public static string GenerateSheetName(View view, string selectedStandard)
+        public static string GenerateSheetName(View view, string sheetNameStandard)
         {
-            string sheetName = view.Name;
+            // GENERATE A NAME FOR THE SHEET BASED ON THE SELECTED STANDARD
+            // Get the "Trade" parameter value from the view
+            string trade = view.LookupParameter("Trade").AsString();
+
             // get the associated level of the view
-            var associatedViewLevel = view.GenLevel.Name;
+            var levelName = view.GenLevel.Name;
 
-            // Append the standard string
-            string standardChars = GetStandardChars(selectedStandard);
+            // Get the "Scope Box" parameter value from the view
+            var scopeBoxName = view.LookupParameter("Scope Box").AsValueString();
 
+            // Get the "Sheet Series" parameter value from the view
+            string sheetSeries = view.LookupParameter("Sheet Series").AsString();
 
-
-            // Get the "Browser Category" and "Browser Sub-Category" for the view
-            var browserCatAndSubCat = GetBrowserCategoryAndSubCategory(view);
-            string browserCategory = browserCatAndSubCat.Item1;
-            string browserSubCategory = browserCatAndSubCat.Item2;
+            // [TRADE]<space>[LEVEL<ALT+255>NAME]<ALT+255>[SCOPE<ALT+255>BOX<ALT+255>NAME]<space>[SHEET SERIES]
+            string sheetName = $"{trade} {ConvertSpaceToAlt255(levelName)} {ConvertSpaceToAlt255(scopeBoxName)} {sheetSeries}";
 
             return sheetName;
         }
+        //public static string GenerateSheetName(View view, string sheetNameStandard)
+        //{
+        //    string sheetName = view.Name;
+        //    // get the associated level of the view
+        //    var associatedViewLevel = view.GenLevel.Name;
 
+        //    // Append the standard string
+        //    string standardChars = GetStandardChars(sheetNameStandard);
+
+
+
+        //    // Get the "Browser Category" and "Browser Sub-Category" for the view
+        //    var browserCatAndSubCat = GetBrowserCategoryAndSubCategory(view);
+        //    string browserCategory = browserCatAndSubCat.Item1;
+        //    string browserSubCategory = browserCatAndSubCat.Item2;
+
+        //    return sheetName;
+        //}
+        public static string ConvertSpaceToAlt255(string input)
+        {
+            if (input == null)
+            {
+                throw new ArgumentNullException(nameof(input), "Input string cannot be null");
+            }
+
+            // Replace spaces with Alt+255 " " (non-breaking space)
+            string result = input.Replace(' ', ' ');
+            //string result = input.Replace(' ', '\u00A0');
+            //string result = input.Replace(' ', '8');
+
+
+            return result;
+        }
         private static string GetStandardChars(string selectedStandard)
         {
             var listOfStandards = GetSheetNameStandardsList();
 
-            return ""; // Not done
+            return "sCHARS"; // Not done
         }
 
         public static List<string> GetSheetTypesList(Document doc)
@@ -240,7 +290,16 @@ namespace ArchilizerTinyTools
             return sheetTypeDefinitionsList;
         }
 
-        Dictionary<ViewSheet, List<Viewport>> CreateSheetsFromViews(Document doc, List<View> viewList, FamilySymbol titleBlock, XYZ xyzPoint, bool oneToOne, string multipleViewsSheetName, ElementId textTypeId, string sheetType)
+        Dictionary<ViewSheet, List<Viewport>> CreateSheetsFromViews(
+            Document doc,
+            List<View> viewList,
+            FamilySymbol titleBlock,
+            XYZ xyzPoint,
+            bool oneToOne,
+            string multipleViewsSheetName,
+            ElementId textTypeId,
+            string sheetType,
+            string selectedSheetNameStandard)
         {
             // Check if a new location is set
             bool newLocationSet = xyzPoint != XYZ.Zero;
@@ -259,21 +318,21 @@ namespace ArchilizerTinyTools
                         // Temporary list for viewports to be returned
                         var viewPortsCreated = new List<Viewport>();
 
+                        Tuple<string, string> sheetNameAndNumber = GenerateSheetNameAndNumber(curView, selectedSheetNameStandard);
+                        // Check if there is an existing sheet with the same number, if so throw an exception
+                        CheckForExistingSheetNumber(doc, sheetNameAndNumber.Item2);
+
                         // Create a new sheet
                         var newViewSheet = ViewSheet.Create(doc, titleBlock.Id);
-                        newViewSheet.SheetNumber = GenerateSheetNumber(curView);
-                        newViewSheet.Name = curView.Name;
+
+
+
+                        newViewSheet.SheetNumber = sheetNameAndNumber.Item2;
+                        newViewSheet.Name = sheetNameAndNumber.Item1;
 
                         // Set the Sheet Type for the newViewSheet
                         SetViewSheetParameterByParameterName(sheetType, newViewSheet);
-                        //if (!string.IsNullOrEmpty(sheetType))
-                        //{
-                        //    Parameter sheetTypeParameter = newViewSheet.LookupParameter("Sheet Type");
-                        //    if (sheetTypeParameter != null)
-                        //    {
-                        //        sheetTypeParameter.Set(sheetType);
-                        //    }
-                        //}
+
 
                         // Get the center of the title block's bounding box
                         XYZ titleBlockCenter = GetCenterOfBoundingBox(titleBlock.get_BoundingBox(newViewSheet));
@@ -291,16 +350,21 @@ namespace ArchilizerTinyTools
                             viewPortsCreated.Add(newViewPort);
                         }
 
+                        //LeftAlignViewPortToViewSheet(doc, newViewSheet, newViewPort, titleBlockCenter);
+
                         // Add the new sheet and associated viewports to the dictionary
                         viewSheetCreated.Add(newViewSheet, viewPortsCreated);
                     }
                     catch (Exception e)
                     {
+                        // List of views that failed to create a sheet
+                        failedViewsToSheets.Add($"{curView.Id} {curView.Name}");
+
                         Debug.Print($"Error: ==> {curView.Name} {curView.Id} \n{e.Message}");
                     }
                 }
             }
-            else // Create a single View Sheet for all views
+            else // if oneToOne==false Create a single View Sheet for all views
             {
                 var newViewSheet = ViewSheet.Create(doc, titleBlock.Id);
                 newViewSheet.Name = multipleViewsSheetName;
@@ -344,6 +408,36 @@ namespace ArchilizerTinyTools
             return viewSheetCreated;
         }
 
+        private Tuple<string, string> GenerateSheetNameAndNumber(View curView, string selectedSheetNameStandard)
+        {
+            // Generate the sheet name and number based on the selected standard
+            string newsheetName;
+            if (selectedSheetNameStandard == "Construction")
+                newsheetName = GenerateSheetName(curView, selectedSheetNameStandard);
+            else
+                newsheetName = curView.Name;
+
+            var sheetNumber = GenerateSheetNumber(curView);
+
+            // return the Tuple with the sheet name and number
+            return new Tuple<string, string>(newsheetName, sheetNumber);
+        }
+
+        private void CheckForExistingSheetNumber(Document doc, string sheetNumber)
+        {
+            // Check if there is an existing sheet with the same number
+            var existingSheet = new FilteredElementCollector(doc)
+                .OfClass(typeof(ViewSheet))
+                .Cast<ViewSheet>()
+                .FirstOrDefault(sheet => sheet.SheetNumber == sheetNumber);
+
+            if (existingSheet == null)
+                return;
+
+            // else throw an exception
+            throw new Exception($"Sheet with number {sheetNumber} already exists.");
+        }
+
         private string GenerateSheetNumber(View curView)
         {
             // Get the "Browser Category" and "Browser Sub-Category" for the view
@@ -355,19 +449,115 @@ namespace ArchilizerTinyTools
             string SheetNumPrefix = browserSubCategory.Split(' ')[0];
 
             // get the LevelSuffix from the View's Level, split the name and get the last integers
-            string LevelSuffix = curView.GenLevel.Name.Split(' ').Last();
+            //string LevelSuffix = curView.GenLevel.Name.Split(' ').Last();
+            string LevelSuffix = GetBOMParam(curView);
 
             // get the ScopeBoxSuffix from the View's Scope Box, split the name and get the last integers
-            //string ScopeBoxSuffix = curView.get_Parameter(BuiltInParameter.VIEWER_VOLUME_OF_INTEREST_CROP).AsString();
             var ScopeBoxSuffix = curView.LookupParameter("Scope Box").AsValueString();
             // split the scope box name and get the last integers
             ScopeBoxSuffix = ScopeBoxSuffix.Split(' ').Last();
 
-            // Generate the sheet number
+            var standardAbbriviation = GetSheetStandardNamingTable(curView.GenLevel.Name);
+            var abbr = "";
+            if (standardAbbriviation != "") { abbr = standardAbbriviation; }
+
+
+
+            // Generate the sheet number "[]"
+            //string sheetNumber = $"{SheetNumPrefix}-{abbr}{LevelSuffix}.{ScopeBoxSuffix}";
             string sheetNumber = $"{SheetNumPrefix}-{LevelSuffix}.{ScopeBoxSuffix}";
 
             return sheetNumber;
         }
+
+        private string GetBOMParam(View curView)
+        {
+
+            var _LEVEL = curView.GenLevel.Name;
+            // GET THE LEVEL
+            Level viewLevel = new FilteredElementCollector(Doc)
+                .OfClass(typeof(Level))
+                .Cast<Level>()
+                .FirstOrDefault(l => l.Name == _LEVEL);
+
+            // Get the "BOM" parameter value from the view
+            var _paramName = "ACCO Level for BOM";
+            var _param = viewLevel.LookupParameter(_paramName).AsString();
+
+            return _param;
+        }
+
+        // Write a method called GetSheetStandardNamingTable that will import a CSV file with the sheet standard naming table into a dictionary. the csv will be located in the same location of this assembly
+        // The CSV file will have the following columns: "Sheet Type", "Sheet Name Standard"
+        // it will take in a view string name and return the sheet name standard
+        public static string GetSheetStandardNamingTable(string viewName)
+        {
+            viewName = viewName.Split()[0];
+
+            // Get the path of the CSV file
+            string csvFilePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "SheetStandardsNamingTable.csv");
+
+            // Read the CSV file into a dictionary
+            Dictionary<string, string> sheetStandards = ReadCSVFile(csvFilePath);
+
+            // if the view name contains any of the keys in the dictionary, return the value
+            var _value = sheetStandards.Keys.Contains(viewName) ? sheetStandards[viewName] : "";
+
+            return _value;
+        }
+        //public static string GetSheetStandardNamingTable(string viewName)
+        //{
+        //    viewName = viewName.Split()[0];
+
+        //    // Get the path of the CSV file
+        //    string csvFilePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "SheetStandardsNamingTable.csv");
+
+        //    // Read the CSV file into a dictionary
+        //    Dictionary<string, string> sheetStandards = ReadCSVFile(csvFilePath);
+
+        //    // if the view name contains any of the keys in the dictionary, return the value
+        //    foreach (var name in sheetStandards)
+        //    {
+        //        if (viewName.Contains(name.Key))
+        //        {
+        //            var _value = sheetStandards[name.Value];
+        //            return _value;
+        //        }
+        //    }
+
+
+        //    return "";
+        //}
+        public static Dictionary<string, string> ReadCSVFile(string filePath)
+        {
+            Dictionary<string, string> columnData = new Dictionary<string, string>();
+
+            using (StreamReader reader = new StreamReader(filePath))
+            {
+                // Skip the first line (header row)
+                reader.ReadLine();
+
+                string line = reader.ReadLine(); // Read the second line
+                while (line != null)
+                {
+                    string[] fields = line.Split(',');
+
+                    // Assuming the first column is the key and the second column is the value
+                    if (fields.Length >= 2)
+                    {
+                        string key = fields[0];
+                        string value = fields[1];
+
+                        columnData[key] = value;
+                    }
+
+                    line = reader.ReadLine(); // Read the next line
+                }
+            }
+
+            return columnData;
+        }
+
 
         public static void SetViewSheetParameterByParameterName(string sheetType, ViewSheet newViewSheet)
         {
