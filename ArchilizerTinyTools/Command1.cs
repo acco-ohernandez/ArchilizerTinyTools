@@ -53,7 +53,9 @@ namespace ArchilizerTinyTools
                 // Collect all views in the document
                 var views = new FilteredElementCollector(doc)
                     .OfCategory(BuiltInCategory.OST_Views)
+                    .WhereElementIsNotElementType()
                     .Cast<View>()
+                    .Where(view => !view.IsTemplate) // Filter out view templates
                     .OrderBy(x => x.ViewType)
                     .ToList();
 
@@ -230,8 +232,8 @@ namespace ArchilizerTinyTools
             // Get the "Sheet Series" parameter value from the view
             string sheetSeries = view.LookupParameter("Sheet Series").AsString();
 
-            // [TRADE]<space>[LEVEL<ALT+255>NAME]<ALT+255>[SCOPE<ALT+255>BOX<ALT+255>NAME]<space>[SHEET SERIES]
-            string sheetName = $"{trade} {ConvertSpaceToAlt255(levelName)} {ConvertSpaceToAlt255(scopeBoxName)} {sheetSeries}";
+            // [TRADE]<space>[LEVEL<ALT+255>NAME]<ALT+255>-<ALT+255>[SCOPE<ALT+255>BOX<ALT+255>NAME]<space>[SHEET SERIES]
+            string sheetName = $"{trade} {ConvertSpaceToAlt255(levelName)} - {ConvertSpaceToAlt255(scopeBoxName)} {sheetSeries}";
 
             return sheetName;
         }
@@ -319,6 +321,10 @@ namespace ArchilizerTinyTools
                         var viewPortsCreated = new List<Viewport>();
 
                         Tuple<string, string> sheetNameAndNumber = GenerateSheetNameAndNumber(curView, selectedSheetNameStandard);
+
+                        // NEED TO CREATE METHOD TO CHECK IF VIEW HAS ALREADY BEEN PLACED ON ANY EXISTING SHEET.
+                        // < Create method here >
+
                         // Check if there is an existing sheet with the same number, if so throw an exception
                         CheckForExistingSheetNumber(doc, sheetNameAndNumber.Item2);
 
@@ -350,7 +356,8 @@ namespace ArchilizerTinyTools
                             viewPortsCreated.Add(newViewPort);
                         }
 
-                        //LeftAlignViewPortToViewSheet(doc, newViewSheet, newViewPort, titleBlockCenter);
+                        LeftAlignViewPortToTitleBlock(doc, newViewSheet, newViewPort, titleBlockCenter, xyzInchesPoint);
+                        //TopAlignViewPortToTibleBlock(doc, newViewSheet, newViewPort, titleBlockCenter, xyzInchesPoint);
 
                         // Add the new sheet and associated viewports to the dictionary
                         viewSheetCreated.Add(newViewSheet, viewPortsCreated);
@@ -408,6 +415,96 @@ namespace ArchilizerTinyTools
             return viewSheetCreated;
         }
 
+        //private void TopAlignViewPortToTibleBlock(Document doc, ViewSheet newViewSheet, Viewport newViewPort, XYZ titleBlockCenter, XYZ xyzInchesPoint)
+        //{
+        //    // Get the title block instance on the sheet
+        //    FamilyInstance titleBlockInstance = new FilteredElementCollector(doc, newViewSheet.Id)
+        //        .OfCategory(BuiltInCategory.OST_TitleBlocks)
+        //        .Cast<FamilyInstance>()
+        //        .FirstOrDefault();
+
+        //    if (titleBlockInstance == null)
+        //        return;
+
+        //    // Get the title block's bounding box
+        //    BoundingBoxXYZ titleBlockBoundingBox = titleBlockInstance.get_BoundingBox(newViewSheet);
+
+        //    if (titleBlockBoundingBox == null)
+        //        return;
+
+        //    // Get the center of the title block's bounding box
+        //    XYZ titleBlockCenter = 0.5 * (titleBlockBoundingBox.Min + titleBlockBoundingBox.Max);
+
+        //    // Adjust the title block center if a new location is set
+        //    if (xyzInchesPoint != null)
+        //        titleBlockCenter += xyzInchesPoint;
+
+        //    // Get the center of the viewport
+        //    //XYZ viewPortCenter = newViewPort.GetBoxCenter();
+
+        //    // get the viewport bounding box
+        //    BoundingBoxXYZ viewPortBoundingBox = newViewPort.get_BoundingBox(newViewSheet);
+
+        //    // Calculate the distance to move the viewport to the left
+        //    double distanceToMove = titleBlockBoundingBox.Max.Y - viewPortBoundingBox.Max.Y;
+        //    // This will nudge the viewport to the right by 5.4 inches
+        //    var nudgeRight = Math.Abs((distanceToMove / 12) * 5.4); // 
+
+        //    XYZ newLocation = new XYZ(0, distanceToMove + nudgeRight, 0);
+        //    if (xyzInchesPoint != null)
+        //    {
+        //        newLocation += xyzInchesPoint;
+        //    }
+
+        //    // Move the viewport to the left
+        //    ElementTransformUtils.MoveElement(doc, newViewPort.Id, newLocation);
+        //}
+
+        private void LeftAlignViewPortToTitleBlock(Document doc, ViewSheet newViewSheet, Viewport newViewPort, XYZ _titleBlockCenter, XYZ xyzInchesPoint)
+        {
+            // Get the title block instance on the sheet
+            FamilyInstance titleBlockInstance = new FilteredElementCollector(doc, newViewSheet.Id)
+                .OfCategory(BuiltInCategory.OST_TitleBlocks)
+                .Cast<FamilyInstance>()
+                .FirstOrDefault();
+
+            if (titleBlockInstance == null)
+                return;
+
+            // Get the title block's bounding box
+            BoundingBoxXYZ titleBlockBoundingBox = titleBlockInstance.get_BoundingBox(newViewSheet);
+
+            if (titleBlockBoundingBox == null)
+                return;
+
+            // Get the center of the title block's bounding box
+            XYZ titleBlockCenter = 0.5 * (titleBlockBoundingBox.Min + titleBlockBoundingBox.Max);
+
+            // Adjust the title block center if a new location is set
+            if (xyzInchesPoint != null)
+                titleBlockCenter += xyzInchesPoint;
+
+            // Get the center of the viewport
+            //XYZ viewPortCenter = newViewPort.GetBoxCenter();
+
+            // get the viewport bounding box
+            BoundingBoxXYZ viewPortBoundingBox = newViewPort.get_BoundingBox(newViewSheet);
+
+            // Calculate the distance to move the viewport to the left
+            double distanceToMove = titleBlockBoundingBox.Min.X - viewPortBoundingBox.Min.X;
+            // This will nudge the viewport to the right by 5.4 inches
+            var nudgeRight = Math.Abs((distanceToMove / 12) * 6.1); // 
+
+            XYZ newLocation = new XYZ(distanceToMove + nudgeRight, 0, 0);
+            if (xyzInchesPoint != null)
+            {
+                newLocation += xyzInchesPoint;
+            }
+
+            // Move the viewport to the left
+            ElementTransformUtils.MoveElement(doc, newViewPort.Id, newLocation);
+        }
+
         private Tuple<string, string> GenerateSheetNameAndNumber(View curView, string selectedSheetNameStandard)
         {
             // Generate the sheet name and number based on the selected standard
@@ -433,6 +530,9 @@ namespace ArchilizerTinyTools
 
             if (existingSheet == null)
                 return;
+
+
+            // add the sheet number to the failed list
 
             // else throw an exception
             throw new Exception($"Sheet with number {sheetNumber} already exists.");
@@ -481,7 +581,7 @@ namespace ArchilizerTinyTools
                 .FirstOrDefault(l => l.Name == _LEVEL);
 
             // Get the "BOM" parameter value from the view
-            var _paramName = "ACCO Level for BOM";
+            var _paramName = "ACCO Sheet Name Level Abbrv.";
             var _param = viewLevel.LookupParameter(_paramName).AsString();
 
             return _param;

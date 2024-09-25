@@ -6,10 +6,10 @@
         xmlns:local="clr-namespace:ArchilizerTinyTools.Forms"
         mc:Ignorable="d"
         Title="ViewsToSheets_Form" 
-        Height="600" 
+        Height="700" 
         Width="1200" 
         MinWidth="450" 
-        MinHeight="450"
+        MinHeight="700"
         WindowStartupLocation="CenterScreen"
         >
 
@@ -43,11 +43,12 @@
                 <TextBlock Text="Search Views: " VerticalAlignment="Center"/>
                 <TextBox x:Name="txtSearch" Width="200" VerticalAlignment="Center" Margin="5,0" TextChanged="txtSearch_TextChanged"/>
             </StackPanel>
+            
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10,5">
                 <TextBlock Text="Sheet Naming Standard: " VerticalAlignment="Center"/>
-                <ComboBox x:Name="cmb_SheetNameStandards" IsEditable="True" Width="250"/>
-
+                <ComboBox x:Name="cmb_SheetNameStandards" IsEditable="False" SelectedIndex="0" Width="250" />
             </StackPanel>
+            
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="10,5">
                 <Label Content="Inches from center of sheet: X" />
                 <TextBox x:Name="txt_X" Text="0.0" Width="auto" MinWidth="15" MaxWidth="30" VerticalAlignment="Center" Margin="1,0" TextChanged="txt_X_TextChanged"/>
@@ -158,7 +159,7 @@
             </StackPanel>
             <StackPanel Orientation="Vertical" Grid.Column="1" HorizontalAlignment="Center" Width="auto">
                 <Label x:Name="lbl_SheeType" Content="Sheet Type"/>
-                <ComboBox x:Name="cmb_SheetTypes" IsEditable="True" Width="300"/>
+                <ComboBox x:Name="cmb_SheetTypes" IsEditable="False" Width="300"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" Grid.Column="2" HorizontalAlignment="Right" Margin="3" Width="auto">
                 <Button x:Name="btn_Ok" Content="OK" Height="30" Width="90"  Margin="0,0,10,0" IsEnabled="False" Click="btn_Ok_Click" />
