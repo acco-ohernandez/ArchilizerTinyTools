@@ -192,10 +192,19 @@ namespace ArchilizerTinyTools
         private void ShowResultsForm()
         {
             var resultGridsForm = new ResultGridsForm();
-            resultGridsForm.dg_ViewsNotPlaced.ItemsSource = viewsFailedToBePlacedOnSheets;
             resultGridsForm.dg_ViewsPlaced.ItemsSource = viewsPlacedOnSheets;
-            resultGridsForm.lbl_FailsCount.Content = viewsFailedToBePlacedOnSheets.Count;
+            resultGridsForm.dg_ViewsNotPlaced.ItemsSource = viewsFailedToBePlacedOnSheets;
             resultGridsForm.lbl_SuccessCount.Content = viewsPlacedOnSheets.Count;
+            var viewsNotPlaced = viewsFailedToBePlacedOnSheets.Count;
+            if (viewsNotPlaced == 0)
+            {
+                //resultGridsForm.skp_ViewsNotPlacedLabels.Visibility = System.Windows.Visibility.Hidden;
+                resultGridsForm.dg_ViewsNotPlaced.Visibility = System.Windows.Visibility.Hidden;
+
+                //set the height of the grid row 4 to 0. 
+                resultGridsForm.MainGrid.RowDefinitions[4].Height = new GridLength(0);
+            }
+            resultGridsForm.lbl_FailsCount.Content = viewsFailedToBePlacedOnSheets.Count;
             // Show the results form
             resultGridsForm.Show(); // By using the Show method instead of ShowDialog, the form will be shown as a modeless dialog, allowing the user to interact with the Revit application while the form is open.
         }

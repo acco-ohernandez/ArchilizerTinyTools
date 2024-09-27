@@ -8,7 +8,7 @@
         Title="ViewsToSheets_Form" 
         Height="700" 
         Width="1200" 
-        MinWidth="450" 
+        MinWidth="1200" 
         MinHeight="700"
         WindowStartupLocation="CenterScreen"
         >
@@ -22,6 +22,7 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="90" />
         </Grid.RowDefinitions>
+        
 
         <!-- Row [0] -->
         <StackPanel Grid.Row="0" Orientation="Horizontal">
@@ -32,7 +33,7 @@
         <!-- Row [1] -->
         <Label Grid.Row="1" Content="Make your selections" x:Name="lbl_DatagridLabel" FontSize="12" />
 
-        <!-- Row [2] -->
+        <!-- Row [2]  [Search Views] [Sheet Naming Standards] [Viewport Insert point]-->
         <Grid Grid.Row="2" Margin="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -61,11 +62,16 @@
 
 
       
-         Row [3] 
-        <StackPanel Grid.Row="3" Orientation="Horizontal" MaxHeight="700" Width="auto"  Margin="5" HorizontalAlignment="Center">
-             Add a ScrollViewer for each DataGrid within the StackPanel 
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <DataGrid x:Name="dgViews" 
+         <!--Row [3]--> 
+        <!--<StackPanel Grid.Row="3"  Orientation="Horizontal" MaxHeight="700"  Margin="5" HorizontalAlignment="Center">-->
+             <!--Add a ScrollViewer for each DataGrid within the StackPanel-->
+        <Grid Grid.Row="3" Margin="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <DataGrid x:Name="dgViews"  Grid.Column="0"
                           GridLinesVisibility="None"
                           AlternatingRowBackground="AliceBlue"
                           CanUserReorderColumns="True"
@@ -77,24 +83,21 @@
                           EnableRowVirtualization="True"
                           Width="auto"
                           Height="auto"
-                          MinWidth="100"
+                          MinWidth="300"
                           Margin="10"
                           MouseDoubleClick="dg_MouseDoubleClick" 
                           SelectionChanged="dgViews_SelectionChanged"
                           IsReadOnly="True"
                           HeadersVisibility="Column"
                           >
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="View Type" Binding="{Binding ViewType}" />
-                        <DataGridTextColumn Header="View Name" Binding="{Binding Name}" />
-                    </DataGrid.Columns>
-                </DataGrid>
-            </ScrollViewer>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="View Type" Binding="{Binding ViewType}" />
+                    <DataGridTextColumn Header="View Name" Binding="{Binding Name}" Width="auto"/>
+                </DataGrid.Columns>
+            </DataGrid>
 
-            <GridSplitter Width="5" Height="5" ResizeDirection="Columns" VerticalAlignment="Top"/>
 
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <DataGrid x:Name="dgTitleBlocks" 
+            <DataGrid x:Name="dgTitleBlocks"  Grid.Column="1"
                           GridLinesVisibility="None"
                           AlternatingRowBackground="AliceBlue"
                           CanUserReorderColumns="True"
@@ -104,7 +107,7 @@
                           AutoGenerateColumns="False"
                           EnableColumnVirtualization="False"
                           EnableRowVirtualization="True"
-                          MinWidth="100"
+                          MinWidth="300"
                           Margin="10"
                           MouseDoubleClick="dg_MouseDoubleClick"
                           SelectionChanged="dgTitleBlocks_SelectionChanged"
@@ -112,17 +115,14 @@
                           HeadersVisibility="Column"
                           
                 >
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="TitleBlocks (Single Select)" Binding="{Binding TitleBlockName}"/>
-                        <DataGridTextColumn Header="FamilyName" Binding="{Binding FamilyName}"/>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </ScrollViewer>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="TitleBlocks (Single Select)" Binding="{Binding TitleBlockName}"/>
+                    <DataGridTextColumn Header="FamilyName" Binding="{Binding FamilyName}" Width="auto"/>
+                </DataGrid.Columns>
+            </DataGrid>
 
-            <GridSplitter Width="5" Height="5" ResizeDirection="Columns" VerticalAlignment="Top" />
 
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <DataGrid x:Name="dgTitleText" 
+            <DataGrid x:Name="dgTitleText" Grid.Column="2"
                           GridLinesVisibility="None"
                           AlternatingRowBackground="AliceBlue"
                           CanUserReorderColumns="True"
@@ -132,19 +132,20 @@
                           AutoGenerateColumns="False"
                           EnableColumnVirtualization="False"
                           EnableRowVirtualization="True"
-                          MinWidth="100"
+                          MinWidth="300"
                           Margin="10"
                           MouseDoubleClick="dg_MouseDoubleClick" 
                           SelectionChanged="dgTitleText_SelectionChanged"
                           IsReadOnly="True"
+                          SelectedIndex="0"
                           HeadersVisibility="Column"
                 >
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Title Text (Single Select)" Binding="{Binding Mode=OneWay}" />
-                    </DataGrid.Columns>
-                </DataGrid>
-            </ScrollViewer>
-        </StackPanel>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Title Text (Single Select)" Binding="{Binding Mode=OneWay}" Width="auto"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+        <!--</StackPanel>-->
 
         <!-- Row [4] -->
         <Grid Grid.Row="4" Margin="3">
