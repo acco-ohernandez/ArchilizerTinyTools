@@ -30,17 +30,26 @@ namespace ArchilizerTinyTools
     [Transaction(TransactionMode.Manual)]
     public class Command1 : IExternalCommand
     {
+        // this are the variables for the Revit application which are accessible to all methods in this class
         private List<string> failedViewsToSheets;
-        public static Document Doc;
+        private List<ViewInfo> ViewsWithoutAbbrvParam_List = new List<ViewInfo>();
+
+        // List for the results of views placed on sheets and views that failed to be placed on sheets
+        private List<ViewInfo> viewsPlacedOnSheets = new List<ViewInfo>();
+        private List<ViewInfo> viewsFailedToBePlacedOnSheets = new List<ViewInfo>();
+
+        private string SelectedViewStandard;
+
+        public static Document CurrentDoc;
 
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
-            // this is a variable for the Revit application
+            // Revit application
             UIApplication uiapp = commandData.Application;
 
-            // this is a variable for the current Revit model
+            // Revit model
             Document doc = uiapp.ActiveUIDocument.Document;
-            Doc = doc;
+            CurrentDoc = doc;
 
             // if the failedViewsToSheets is null, create a new list, if not clear the list
             failedViewsToSheets = failedViewsToSheets ?? new List<string>();
@@ -49,15 +58,8 @@ namespace ArchilizerTinyTools
             #region FocusedCode
             try
             {
-
                 // Collect all views in the document
-                var views = new FilteredElementCollector(doc)
-                    .OfCategory(BuiltInCategory.OST_Views)
-                    .WhereElementIsNotElementType()
-                    .Cast<View>()
-                    .Where(view => !view.IsTemplate) // Filter out view templates
-                    .OrderBy(x => x.ViewType)
-                    .ToList();
+                List<View> views = GetFilteredViews(doc);
 
                 // Allow user to dynamically sellect views from a list 
                 List<View> dynamicViewsList = new List<View>();
@@ -65,22 +67,12 @@ namespace ArchilizerTinyTools
                 // dynamicViewsList = GetSelectedViewsList(doc); // C Sharp Form testing
 
                 // Collect all title blocks that are element types
-                var titleBlocksCollector = new FilteredElementCollector(doc)
-                    .OfCategory(BuiltInCategory.OST_TitleBlocks)
-                    .WhereElementIsElementType()
-                    .Cast<FamilySymbol>()
-                    .ToList();
+                List<FamilySymbol> titleBlocksCollector = GetTitleBlockFamilySymbols(doc);
 
-                ////Find the "30x42" title block by its name
-                //var titleBlock = titleBlocksCollector.Where(t => t.Name == "30x42").First().Id;
+                // Create a parameter filter rule to get the Viewport family types
+                IEnumerable<Element> viewPortFamilyTypes = GetViewPortFamilyTypes(doc);
 
-                FilterRule rule = ParameterFilterRuleFactory.CreateEqualsRule(new ElementId((int)BuiltInParameter.SYMBOL_FAMILY_NAME_PARAM), "Viewport", false);
-                ElementParameterFilter filter = new ElementParameterFilter(rule);
-                IEnumerable<Element> viewPortFamilyTypes = new FilteredElementCollector(doc)
-                                    .WhereElementIsElementType()
-                                    .WherePasses(filter);
-
-                // Selections Form
+                // Selections Form for the user to select views and title blocks
                 var viewsForm = new ViewsToSheets_Form(views, titleBlocksCollector);
 
                 viewsForm.cmb_SheetNameStandards.ItemsSource = GetSheetNameStandardsList();
@@ -139,6 +131,7 @@ namespace ArchilizerTinyTools
 
                 // Get the Sheet Type to use for new sheets
                 var selectedSheetType = viewsForm.cmb_SheetTypes.Text;
+                if (selectedSheetType == "(Use Construction Deliverable)") { selectedSheetType = string.Empty; SelectedViewStandard = "Construction"; } // If the user does not change the default selection "???", set the value to an empty string to avoid creating a new Sheet Type
                 //if (selectedSheetType == "")
                 //    selectedSheetType = "NEW SHEETS CREATED"; // This would create a new Sheet Type the user can use later.
 
@@ -176,26 +169,100 @@ namespace ArchilizerTinyTools
                 //TaskDialog.Show("Info", $"View Sheets Created: {sheetsCreated.Count()}\n" +
                 //                        $"{string.Join("\n", sheetsCreated.Select(s => s.Name))}");
 
-                // if the failedViewsToSheets list is not empty, add each entry to a string new line
+                #region TaskDialog for Results // This is commented out because the results are now displayed in a form
+                //// if the failedViewsToSheets list is not empty, add each entry to a string new line
+                //string failedViewsToSheetsString = failedViewsToSheets.Count > 0 ? $"\n--- {failedViewsToSheets.Count} Views not added to sheets ---\n" + string.Join("\n", failedViewsToSheets) : "\nSuccess!";
+                //// This shows a message box with the number of views placed on sheets and the views that failed to be placed on sheets
+                //TaskDialog.Show("Info", $"View Sheets Created: {sheetsCreated.Count()}" +
+                //                             $"{failedViewsToSheetsString}");
+                #endregion TaskDialog for Results
 
-                string failedViewsToSheetsString = failedViewsToSheets.Count > 0 ? $"\n--- {failedViewsToSheets.Count} Views not added to sheets ---\n" + string.Join("\n", failedViewsToSheets) : "\nSuccess!";
-
-
-                TaskDialog.Show("Info", $"View Sheets Created: {sheetsCreated.Count()}" +
-                                             $"{failedViewsToSheetsString}");
-                #endregion
+                #endregion FocusedCode
 
             }
             catch (Exception e) { TaskDialog.Show("Error", $"Error: ==> {e.Message}"); }
 
+            // Show results form if there are any views that failed to be placed on sheets
+            if (viewsPlacedOnSheets.Count > 0 || viewsFailedToBePlacedOnSheets.Count > 0)
+                ShowResultsForm();
+
             return Result.Succeeded;
+        }
+
+        private void ShowResultsForm()
+        {
+            var resultGridsForm = new ResultGridsForm();
+            resultGridsForm.dg_ViewsNotPlaced.ItemsSource = viewsFailedToBePlacedOnSheets;
+            resultGridsForm.dg_ViewsPlaced.ItemsSource = viewsPlacedOnSheets;
+            resultGridsForm.lbl_FailsCount.Content = viewsFailedToBePlacedOnSheets.Count;
+            resultGridsForm.lbl_SuccessCount.Content = viewsPlacedOnSheets.Count;
+            // Show the results form
+            resultGridsForm.Show(); // By using the Show method instead of ShowDialog, the form will be shown as a modeless dialog, allowing the user to interact with the Revit application while the form is open.
+        }
+
+        private static List<View> GetFilteredViews(Document doc)
+        {
+            // Get all views that are placed on sheets by collecting Viewport elements
+            var viewsOnSheets = new FilteredElementCollector(doc)
+                .OfClass(typeof(Autodesk.Revit.DB.Viewport))
+                .Cast<Viewport>()
+                .Select(vp => vp.ViewId) // Collect the View Ids that are placed on sheets
+                .ToHashSet(); // Use a HashSet for efficient lookup
+
+            // Filter the views according to your original logic and exclude views already on sheets
+            var views = new FilteredElementCollector(doc)
+                .OfCategory(BuiltInCategory.OST_Views)
+                .WhereElementIsNotElementType() // Only get views that are not element types
+                .Cast<View>()
+                .Where(view => !view.IsTemplate) // Filter out view templates
+                .Where(t => t.ViewType == ViewType.FloorPlan || t.ViewType == ViewType.CeilingPlan) // Only Floor Plans and Ceiling Plans
+                .Where(v => !v.Name.Contains("BIM Setup View -")) // Exclude views with specific naming convention
+                .Where(v => !viewsOnSheets.Contains(v.Id)) // Exclude views that are placed on sheets
+                .OrderBy(x => x.ViewType)
+                .ToList();
+
+            return views;
+        }
+
+        //private static List<View> GetFilteredViews(Document doc)
+        //{
+        //    var views = new FilteredElementCollector(doc)
+        //        .OfCategory(BuiltInCategory.OST_Views)
+        //        .WhereElementIsNotElementType() // only get views that are not element types
+        //        .Cast<View>()
+        //        .Where(view => !view.IsTemplate) // Filter out view templates
+        //        .Where(t => t.ViewType == ViewType.FloorPlan || t.ViewType == ViewType.CeilingPlan) // Only Floor Plans and Ceiling Plans
+        //        .Where(v => !v.Name.Contains("BIM Setup View -"))
+        //        .OrderBy(x => x.ViewType)
+        //        .ToList();
+        //    return views;
+        //}
+
+        private static List<FamilySymbol> GetTitleBlockFamilySymbols(Document doc)
+        {
+            return new FilteredElementCollector(doc)
+                                .OfCategory(BuiltInCategory.OST_TitleBlocks)
+                                .WhereElementIsElementType()
+                                .Cast<FamilySymbol>()
+                                .ToList();
+        }
+
+        private static IEnumerable<Element> GetViewPortFamilyTypes(Document doc)
+        {
+            FilterRule rule = ParameterFilterRuleFactory.CreateEqualsRule(new ElementId((int)BuiltInParameter.SYMBOL_FAMILY_NAME_PARAM), "Viewport", false);
+            ElementParameterFilter filter = new ElementParameterFilter(rule);
+            IEnumerable<Element> viewPortFamilyTypes = new FilteredElementCollector(doc)
+                                .WhereElementIsElementType()
+                                .WherePasses(filter);
+            return viewPortFamilyTypes;
         }
 
         private static List<string> GetSheetNameStandardsList()
         {
             // create a list of sheet name standards
             return new List<string>
-            { "Construction",
+            {
+              "Construction",
               "Engineering - Mechanical",
               "Engineering - Plumbing",
               "Engineering - Process Pipe",
@@ -224,16 +291,22 @@ namespace ArchilizerTinyTools
             string trade = view.LookupParameter("Trade").AsString();
 
             // get the associated level of the view
-            var levelName = view.GenLevel.Name;
+            //var levelName = view.GenLevel.Name;
+
+            // use a ternary operator to get the level name, if it is null, return an empty string
+            var levelName = view.GenLevel?.Name ?? "";
 
             // Get the "Scope Box" parameter value from the view
-            var scopeBoxName = view.LookupParameter("Scope Box").AsValueString();
+            //var scopeBoxName = view.LookupParameter("Scope Box").AsValueString(); // This will throw an exception if the parameter is not found
+            //use the ternaly operator to get the scope box name, if it is null, return an empty string
+            var scopeBoxName = view.LookupParameter("Scope Box")?.AsValueString() ?? "";
+
 
             // Get the "Sheet Series" parameter value from the view
             string sheetSeries = view.LookupParameter("Sheet Series").AsString();
 
             // [TRADE]<space>[LEVEL<ALT+255>NAME]<ALT+255>-<ALT+255>[SCOPE<ALT+255>BOX<ALT+255>NAME]<space>[SHEET SERIES]
-            string sheetName = $"{trade} {ConvertSpaceToAlt255(levelName)} - {ConvertSpaceToAlt255(scopeBoxName)} {sheetSeries}";
+            string sheetName = $"{ConvertSpaceToAlt255(trade)} {ConvertSpaceToAlt255(levelName)} - {ConvertSpaceToAlt255(scopeBoxName)} {ConvertSpaceToAlt255(sheetSeries)}";
 
             return sheetName;
         }
@@ -317,6 +390,9 @@ namespace ArchilizerTinyTools
                 {
                     try
                     {
+                        if (SelectedViewStandard == "Construction")
+                            sheetType = curView.LookupParameter("Sheet Type").AsValueString();
+
                         // Temporary list for viewports to be returned
                         var viewPortsCreated = new List<Viewport>();
 
@@ -335,6 +411,8 @@ namespace ArchilizerTinyTools
 
                         newViewSheet.SheetNumber = sheetNameAndNumber.Item2;
                         newViewSheet.Name = sheetNameAndNumber.Item1;
+
+
 
                         // Set the Sheet Type for the newViewSheet
                         SetViewSheetParameterByParameterName(sheetType, newViewSheet);
@@ -361,11 +439,22 @@ namespace ArchilizerTinyTools
 
                         // Add the new sheet and associated viewports to the dictionary
                         viewSheetCreated.Add(newViewSheet, viewPortsCreated);
+
+                        // add the view info to the viewsPlacedOnSheets list
+                        viewsPlacedOnSheets.Add(new ViewInfo(curView.Name, curView.ViewType, curView.Id, newViewSheet.SheetNumber, newViewSheet.Name));
                     }
                     catch (Exception e)
                     {
                         // List of views that failed to create a sheet
                         failedViewsToSheets.Add($"{curView.Id} {curView.Name}");
+
+                        var errorCsvString = e.Message.Split(',');
+                        var curSheetNumber = errorCsvString[1];
+                        var curSheetName = errorCsvString[2];
+                        var curReasonb = errorCsvString.Last();
+
+                        // add the view info to the viewsFailedToBePlacedOnSheets list
+                        viewsFailedToBePlacedOnSheets.Add(new ViewInfo(curView.Name, curView.ViewType, curView.Id, curSheetNumber, curSheetName, curReasonb));
 
                         Debug.Print($"Error: ==> {curView.Name} {curView.Id} \n{e.Message}");
                     }
@@ -532,10 +621,10 @@ namespace ArchilizerTinyTools
                 return;
 
 
-            // add the sheet number to the failed list
+            // Add the sheet number to the failed list
 
             // else throw an exception
-            throw new Exception($"Sheet with number {sheetNumber} already exists.");
+            throw new Exception($"Sheet,{sheetNumber},{existingSheet.Name},Sheet Number already exists.");
         }
 
         private string GenerateSheetNumber(View curView)
@@ -550,16 +639,21 @@ namespace ArchilizerTinyTools
 
             // get the LevelSuffix from the View's Level, split the name and get the last integers
             //string LevelSuffix = curView.GenLevel.Name.Split(' ').Last();
-            string LevelSuffix = GetBOMParam(curView);
+            string LevelSuffix = GetACCOSheetNameLevelAbbrvParam(curView);
 
             // get the ScopeBoxSuffix from the View's Scope Box, split the name and get the last integers
-            var ScopeBoxSuffix = curView.LookupParameter("Scope Box").AsValueString();
+            //var ScopeBoxSuffix = curView.LookupParameter("Scope Box").AsValueString();
+
+            // use the ternary operator to get the scope box name, if it is null, return an empty string
+            string ScopeBoxSuffix = curView.LookupParameter("Scope Box")?.AsValueString() ?? curView.Name.ToString(); // this will return an empty string if the parameter is not found
+
             // split the scope box name and get the last integers
             ScopeBoxSuffix = ScopeBoxSuffix.Split(' ').Last();
 
-            var standardAbbriviation = GetSheetStandardNamingTable(curView.GenLevel.Name);
-            var abbr = "";
-            if (standardAbbriviation != "") { abbr = standardAbbriviation; }
+            //// Get the standardAbbriviation from the CSV based on the Level Name
+            //var standardAbbriviation = GetSheetStandardNamingTable(curView.GenLevel.Name);
+            //var abbr = "";
+            //if (standardAbbriviation != "") { abbr = standardAbbriviation; }
 
 
 
@@ -570,22 +664,62 @@ namespace ArchilizerTinyTools
             return sheetNumber;
         }
 
-        private string GetBOMParam(View curView)
+        private string GetACCOSheetNameLevelAbbrvParam(View curView)
         {
+            // Get the level name from the current view's GenLevel
+            var levelName = curView.GenLevel?.Name;
 
-            var _LEVEL = curView.GenLevel.Name;
-            // GET THE LEVEL
-            Level viewLevel = new FilteredElementCollector(Doc)
+            // Check if the view has an associated level
+            if (string.IsNullOrEmpty(levelName))
+            {
+                // Return an empty string if no level is found
+                return "";
+            }
+
+            // Get the level element by filtering the document for levels
+            Level viewLevel = new FilteredElementCollector(CurrentDoc)
                 .OfClass(typeof(Level))
                 .Cast<Level>()
-                .FirstOrDefault(l => l.Name == _LEVEL);
+                .FirstOrDefault(l => l.Name == levelName);
 
-            // Get the "BOM" parameter value from the view
-            var _paramName = "ACCO Sheet Name Level Abbrv.";
-            var _param = viewLevel.LookupParameter(_paramName).AsString();
+            // Ensure the level is found
+            if (viewLevel == null)
+            {
+                return "";
+            }
 
-            return _param;
+            // Lookup the "ACCO Level Alias" parameter in the level
+            var abbreviationParam = viewLevel.LookupParameter("ACCO Level Alias");
+            string abbreviation = abbreviationParam?.AsString() ?? curView.Name.ToString();
+
+            if (string.IsNullOrEmpty(abbreviation))
+            {
+                // If the abbreviation parameter is missing, use the level name as a fallback
+                abbreviation = viewLevel.Name;
+
+                // add the view info to the ViewsWithoutAbbrvParam_List
+                ViewsWithoutAbbrvParam_List.Add(new ViewInfo(curView.Name, curView.ViewType, curView.Id));
+            }
+
+            return abbreviation;
         }
+
+        //private string GetACCOSheetNameLevelAbbrvParam(View curView)
+        //{
+
+        //    var _LEVEL = curView.GenLevel.Name;
+        //    // GET THE LEVEL
+        //    Level viewLevel = new FilteredElementCollector(Doc)
+        //        .OfClass(typeof(Level))
+        //        .Cast<Level>()
+        //        .FirstOrDefault(l => l.Name == _LEVEL);
+
+        //    // Get the "BOM" parameter value from the view
+        //    var _paramName = "ACCO Level Alias";
+        //    var _param = viewLevel.LookupParameter(_paramName).AsString();
+
+        //    return _param;
+        //}
 
         // Write a method called GetSheetStandardNamingTable that will import a CSV file with the sheet standard naming table into a dictionary. the csv will be located in the same location of this assembly
         // The CSV file will have the following columns: "Sheet Type", "Sheet Name Standard"
@@ -1012,31 +1146,5 @@ namespace ArchilizerTinyTools
     }
 
 
-    public class ViewInfo
-    {
-        public string Name { get; set; }
-        public ViewType ViewType { get; set; }
-        public ElementId Id { get; set; } // Add this property
 
-        public ViewInfo(string name, ViewType viewType, ElementId id)
-        {
-            Name = name;
-            ViewType = viewType;
-            Id = id;
-        }
-    }
-
-    public class TitleBlockInfo
-    {
-        public FamilySymbol TitleBlockSymbol { get; set; }
-        public string TitleBlockName { get; set; }
-        public string FamilyName { get; set; }
-
-        public TitleBlockInfo(FamilySymbol titleBlockName)
-        {
-            TitleBlockSymbol = titleBlockName;
-            TitleBlockName = titleBlockName.Name;
-            FamilyName = titleBlockName.FamilyName;
-        }
-    }
 }

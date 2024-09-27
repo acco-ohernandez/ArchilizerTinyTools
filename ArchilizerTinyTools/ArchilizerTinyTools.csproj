@@ -80,7 +80,7 @@
     <StartAction>Program</StartAction>
     <RevitVersion>2022</RevitVersion>
     <StartProgram>$(ProgramW6432)\Autodesk\Revit 2022\Revit.exe</StartProgram>
-	<XamlDebuggingInformation>True</XamlDebuggingInformation>
+    <XamlDebuggingInformation>True</XamlDebuggingInformation>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == '2022Release'">
     <OutputPath>bin\Release\2022\</OutputPath>
@@ -165,6 +165,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.cs" />
+    <Compile Include="Forms\ResultGridsForm.xaml.cs">
+      <DependentUpon>ResultGridsForm.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\TitleBlockInfo.cs" />
+    <Compile Include="Forms\ViewInfo.cs" />
     <Compile Include="Forms\ViewsToSheets_Form.xaml.cs">
       <DependentUpon>ViewsToSheets_Form.xaml</DependentUpon>
     </Compile>
@@ -201,6 +206,10 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <Page Include="Forms\ResultGridsForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Forms\ViewsToSheets_Form.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

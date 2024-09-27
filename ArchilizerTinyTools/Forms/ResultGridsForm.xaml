@@ -1,0 +1,101 @@
+﻿<Window x:Class="ArchilizerTinyTools.Forms.ResultGridsForm"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ArchilizerTinyTools.Forms"
+        mc:Ignorable="d"
+        MinWidth="450"
+        MinHeight="600"
+        Width="750"
+        Height="500"
+        WindowStartupLocation="CenterScreen"
+        
+        Title="ResultGridsForm"
+        >
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40" />
+            <RowDefinition Height="30" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="30" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="50" />
+        </Grid.RowDefinitions>
+        
+        <!--Header-->
+        <Label Grid.Row="0" Content="Results" FontSize="20" FontWeight="Bold" VerticalContentAlignment="Center" HorizontalAlignment="Center"/>
+
+        <!--Label:  Views not placed-->
+        <StackPanel Grid.Row="1" Orientation="Horizontal">
+            <Label x:Name="lbl_Fails" Content="Views not placed on sheets :" FontSize="12" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+            <Label x:Name="lbl_FailsCount"  Content="0" FontSize="12" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+        </StackPanel>
+
+        <!--DataGrid Columns: Sheet Number,Sheet Name,View Name,REASON-->
+        <DataGrid Grid.Row="2" 
+                  x:Name="dg_ViewsNotPlaced" 
+                  AutoGenerateColumns="False" 
+                  CanUserAddRows="False" 
+                  CanUserDeleteRows="False" 
+                  CanUserReorderColumns="False"
+                  CanUserResizeColumns="True"
+                  CanUserResizeRows="False"
+                  CanUserSortColumns="True" 
+                  IsReadOnly="True" 
+                  SelectionMode="Extended" 
+                  SelectionUnit="FullRow" 
+                  HorizontalAlignment="Stretch" 
+                  VerticalAlignment="Stretch"
+                  HeadersVisibility="Column"
+                  Margin="5" 
+                  >
+            <DataGrid.Resources>
+                <!-- Style to set the text color to red -->
+                <Style TargetType="DataGridCell">
+                    <Setter Property="Foreground" Value="Red"/>
+                </Style>
+            </DataGrid.Resources>
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Sheet Number" Binding="{Binding SheetNumber}" Width="*"/>
+                <DataGridTextColumn Header="Sheet Name" Binding="{Binding SheetName}" Width="*" />
+                <DataGridTextColumn Header="View Name" Binding="{Binding Name}" Width="*" />
+                <DataGridTextColumn Header="Reason" Binding="{Binding Reason}" Width="300" />
+            </DataGrid.Columns>
+        </DataGrid>
+        
+        <!--Label: Views Succesfully placed on Sheets-->
+        <StackPanel Grid.Row="3" Orientation="Horizontal">
+            <Label x:Name="lbl_Success" Content="Views succesfully placed on sheets :" FontSize="12" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+            <Label x:Name="lbl_SuccessCount"  Content="0" FontSize="12" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+        </StackPanel>
+
+        <!--DataGrid Columns: Sheet Number,Sheet Name,View Name-->
+        <DataGrid Grid.Row="4" 
+                  x:Name="dg_ViewsPlaced" 
+                  AutoGenerateColumns="False" 
+                  CanUserAddRows="False" 
+                  CanUserDeleteRows="False" 
+                  CanUserReorderColumns="False" 
+                  CanUserResizeColumns="True" 
+                  CanUserResizeRows="False" 
+                  CanUserSortColumns="True" 
+                  IsReadOnly="True" 
+                  SelectionMode="Extended" 
+                  SelectionUnit="FullRow" 
+                  HorizontalAlignment="Stretch" 
+                  VerticalAlignment="Stretch" 
+                  HeadersVisibility="Column"
+                  Margin="5" >
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Sheet Number" Binding="{Binding SheetNumber}" Width="*" />
+                <DataGridTextColumn Header="Sheet Name" Binding="{Binding SheetName}" Width="*" />
+                <DataGridTextColumn Header="View Name" Binding="{Binding Name}" Width="*" />
+            </DataGrid.Columns>
+        </DataGrid>
+        
+        <!--OK Button-->
+        <Button Grid.Row="5" x:Name="btn_OK" Content="OK" HorizontalAlignment="Center" VerticalAlignment="Center" Width="100" Height="30" Click="btn_OK_Click"/>
+
+    </Grid>
+</Window>
