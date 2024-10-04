@@ -5,12 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ArchilizerTinyTools.Forms"
         mc:Ignorable="d"
-        Title="ViewsToSheets_Form" 
         Height="700" 
         Width="1200" 
         MinWidth="1200" 
         MinHeight="700"
         WindowStartupLocation="CenterScreen"
+        Title="ViewsToSheets_Form" 
         >
 
     <Grid Width="auto" Margin="15">

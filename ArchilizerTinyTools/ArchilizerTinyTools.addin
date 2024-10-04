@@ -8,7 +8,7 @@
     <ClientId>3651409b-f38e-4eb4-8ca3-79d110d9772d</ClientId>
     <VendorId>com.YOUR COMPANY NAME</VendorId>
     <VendorDescription>YOUR COMPANY NAME, YOUR COMPANY URL</VendorDescription>
-  </AddIn>
+  </AddIn>-->
   <AddIn Type="Command">
     <Text>ArchilizerTinyTools - Command 2</Text>
     <Description>Some description for ArchilizerTinyTools</Description>
@@ -17,7 +17,7 @@
     <ClientId>64822ca3-8877-42b7-85ab-51b255767b91</ClientId>
     <VendorId>com.YOUR COMPANY NAME</VendorId>
     <VendorDescription>YOUR COMPANY NAME, YOUR COMPANY URL</VendorDescription>
-  </AddIn>-->
+  </AddIn>
   <AddIn Type="Application">
     <Name>ArchilizerTinyTools</Name>
     <Assembly>ArchilizerTinyTools.dll</Assembly>

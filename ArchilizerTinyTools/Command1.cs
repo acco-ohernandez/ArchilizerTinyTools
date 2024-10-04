@@ -315,7 +315,7 @@ namespace ArchilizerTinyTools
             string sheetSeries = view.LookupParameter("Sheet Series").AsString();
 
             // [TRADE]<space>[LEVEL<ALT+255>NAME]<ALT+255>-<ALT+255>[SCOPE<ALT+255>BOX<ALT+255>NAME]<space>[SHEET SERIES]
-            string sheetName = $"{ConvertSpaceToAlt255(trade)} {ConvertSpaceToAlt255(levelName)} - {ConvertSpaceToAlt255(scopeBoxName)} {ConvertSpaceToAlt255(sheetSeries)}";
+            string sheetName = $"{trade} {ConvertSpaceToAlt255(levelName)} - {ConvertSpaceToAlt255(scopeBoxName)} {sheetSeries}";
 
             return sheetName;
         }
