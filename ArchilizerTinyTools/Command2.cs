@@ -19,6 +19,7 @@ namespace ArchilizerTinyTools
     [Transaction(TransactionMode.Manual)]
     public class Command2 : IExternalCommand
     {
+
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
             // Get the active application and document
@@ -31,7 +32,7 @@ namespace ArchilizerTinyTools
             //    .Where(tv => tv.Name == "30x42")
             //    .Where(t => t.FamilyName == "ACCO TITLE BLOCK")
             //    .FirstOrDefault();
-            var titleBlock = GetTitleBlockFamily(doc, "ACCO TITLE BLOCK - Copy");
+            var titleBlock = GetTitleBlockFamily(doc, "ACCO TITLE BLOCK");
 
 
 
@@ -71,16 +72,16 @@ namespace ArchilizerTinyTools
                     trans.Start();
 
 #if REVIT2021
-                // Revit 2021 uses ParameterType
-                ParameterType parameterType = ParameterType.YesNo;
+                 // Revit 2021 uses ParameterType
+                 ParameterType parameterType = ParameterType.YesNo;
 
-                // Create a new family parameter for Revit 2021
-                FamilyParameter newParameter = familyManager.AddParameter(
-                    newParameterName,
-                    parameterGroup,
-                    parameterType,
-                    isInstance
-                );
+                 // Create a new family parameter for Revit 2021
+                 FamilyParameter newParameter = familyManager.AddParameter(
+                     newParameterName,
+                     parameterGroup,
+                     parameterType,
+                     isInstance
+                 );
 
 #elif REVIT2022 || REVIT2023 || REVIT2024
                     // Revit 2022 and newer use ForgeTypeId for the parameter type but BuiltInParameterGroup for the group
@@ -132,7 +133,6 @@ namespace ArchilizerTinyTools
 
             return Result.Succeeded;
         }
-
 
         // Helper method to get the title block family symbols
         private static List<FamilySymbol> GetTitleBlockFamilySymbols(Document doc)
