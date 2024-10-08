@@ -25,6 +25,7 @@ namespace ArchilizerTinyTools
             UIApplication uiapp = commandData.Application;
             UIDocument uidoc = uiapp.ActiveUIDocument;
             Document doc = uidoc.Document;
+
             try
             {
                 // Step 1: Retrieve the title block family symbol
@@ -35,91 +36,16 @@ namespace ArchilizerTinyTools
                     return Result.Failed;
                 }
 
-                // Step 2: Open the family document for editing
-                Document familyDoc = doc.EditFamily(titleBlock);
+                // list of YesNo parameter names to add to the TitleBlock Family
+                var listOfNewParamNames = new List<string>() { "Area 1", "Area 2", "Area 3" };
 
-                // Step 3: Add the parameter to the family document
+                // Step 2: Add the parameter to the title block family
+                Document familyDoc = AddParameterToTitleBlockFamily(doc, titleBlock, listOfNewParamNames, out message);
 
-                using (Transaction trans = new Transaction(familyDoc, "Add Family Parameter"))
+                if (familyDoc == null)
                 {
-                    FamilyManager familyManager = familyDoc.FamilyManager;
-                    if (familyManager == null)
-                    {
-                        message = "FamilyManager not available.";
-                        return Result.Failed;
-                    }
-
-                    // Set the parameter as instance type
-                    bool isInstance = true;
-
-                    // Define the new parameter name
-                    string newParameterName = "Area F";  // Or pass this dynamically
-                    trans.Start();  // ---------- Start the transaction ----------
-
-#if REVIT2021
-                    // Define a new parameter group
-                    BuiltInParameterGroup parameterGroup = BuiltInParameterGroup.PG_VISIBILITY;
-
-                    // Revit 2021 uses ParameterType
-                    ParameterType parameterType = ParameterType.YesNo;
-
-                    // Create a new family parameter for Revit 2021
-                    FamilyParameter newParameter = familyManager.AddParameter(
-                        newParameterName,
-                        parameterGroup,
-                        parameterType,
-                        isInstance
-                    );
-
-                    // start a sub-transaction to set the default value of the parameter
-                    using (SubTransaction subTrans = new SubTransaction(familyDoc))
-                    {
-                        subTrans.Start();  // ---------- Start the sub-transaction ----------
-                        // Set the parameter's default value to false (unchecked)
-                        if (parameterType == ParameterType.YesNo)
-                        {
-                            familyManager.Set(newParameter, 0); // Set to 'false' (unchecked)
-                        }
-                        subTrans.Commit();  // ---------- Commit the sub-transaction ----------
-                    }
-
-#elif REVIT2022 || REVIT2023 || REVIT2024
-                    // Revit 2022 and newer use ForgeTypeId for the parameter type but BuiltInParameterGroup for the group
-                    ForgeTypeId parameterYesNoTypeId = SpecTypeId.Boolean.YesNo;  // This is the Yes/No type parameter
-                    ForgeTypeId groupTypeId = GroupTypeId.Visibility;  // This is the Visibility group
-
-                    // Get the family category
-                    var familyCategory = familyDoc.OwnerFamily.FamilyCategory;
-
-                    // Create a new family parameter for Revit 2022 and newer
-                    FamilyParameter newParameter = familyManager.AddParameter(
-                        newParameterName,
-                        groupTypeId,
-                        parameterYesNoTypeId,
-                        isInstance
-                    );
-
-                    // Set the parameter's default value to false (unchecked)
-                    if (parameterYesNoTypeId == SpecTypeId.Boolean.YesNo)
-                    {
-                        familyManager.Set(newParameter, 0); // Set to 'false' (unchecked)
-                    }
-#endif
-
-                    // Commit the transaction that adds the parameter in the family document
-                    trans.Commit();
-                }
-
-                // Save to a temporary file and load the family back into the project
-                string tmpFile = SeveRfaToTempFile(titleBlock.Name, familyDoc);
-                using (Transaction trans = new Transaction(doc, "Load family."))
-                {
-                    trans.Start();
-                    IFamilyLoadOptions famLoadOptions = new FamilyLoadOptions();
-                    famLoadOptions.OnFamilyFound(true, out bool overwriteParameterValues);
-                    Family newFam = null;
-                    doc.LoadFamily(tmpFile, famLoadOptions, out newFam);
-                    trans.Commit();
+                    message = "Error adding parameter to title block family.";
+                    return Result.Failed;
                 }
             }
             catch (Exception e)
@@ -128,6 +54,101 @@ namespace ArchilizerTinyTools
             }
 
             return Result.Succeeded;
+        }
+
+        private Document AddParameterToTitleBlockFamily(Document doc, Family titleBlock, List<string> listOfNewParamNames, out string message)
+        {
+            message = string.Empty;
+
+            try
+            {
+                // Open the title block family for editing
+                Document familyDoc = doc.EditFamily(titleBlock);
+
+                // Start a transaction to add the parameter
+                using (Transaction trans = new Transaction(familyDoc, "Add Yes/No Parameter"))
+                {
+                    trans.Start();  // ---------- Start the transaction ----------
+
+                    FamilyManager familyManager = familyDoc.FamilyManager;
+                    if (familyManager == null)
+                    {
+                        message = "FamilyManager not available in the family document.";
+                        return null;
+                    }
+
+                    // Add a Yes/No parameter, with visibility set to false
+
+                    // Set the parameter as instance type
+                    bool isInstance = true;
+
+                    // Define the new parameter name
+                    foreach (var newParameterName in listOfNewParamNames)
+                    {
+#if REVIT2021
+                        // Define a new parameter group
+                        BuiltInParameterGroup parameterGroup = BuiltInParameterGroup.PG_VISIBILITY;
+
+                        // Revit 2021 uses ParameterType
+                        ParameterType parameterType = ParameterType.YesNo;
+
+                        // Create a new family parameter for Revit 2021
+                        FamilyParameter newParameter = familyManager.AddParameter(
+                            newParameterName,
+                            parameterGroup,
+                            parameterType,
+                            isInstance
+                        );
+
+                        // start a sub-transaction to set the default value of the parameter
+                        using (SubTransaction subTrans = new SubTransaction(familyDoc))
+                        {
+                            subTrans.Start();  // ---------- Start the sub-transaction ----------
+                                               // Set the parameter's default value to false (unchecked)
+                            if (parameterType == ParameterType.YesNo)
+                            {
+                                familyManager.Set(newParameter, 0); // Set to 'false' (unchecked)
+                            }
+                            subTrans.Commit();  // ---------- Commit the sub-transaction ----------
+                        }
+
+#elif REVIT2022 || REVIT2023 || REVIT2024
+                        // Revit 2022 and newer use ForgeTypeId for the parameter type but BuiltInParameterGroup for the group
+                        ForgeTypeId parameterYesNoTypeId = SpecTypeId.Boolean.YesNo;  // This is the Yes/No type parameter
+                        ForgeTypeId groupTypeId = GroupTypeId.Visibility;  // This is the Visibility group
+
+                        // Get the family category
+                        var familyCategory = familyDoc.OwnerFamily.FamilyCategory;
+
+                        // Create a new family parameter for Revit 2022 and newer
+                        FamilyParameter newParameter = familyManager.AddParameter(
+                            newParameterName,
+                            groupTypeId,
+                            parameterYesNoTypeId,
+                            isInstance
+                        );
+
+                        // Set the parameter's default value to false (unchecked)
+                        if (parameterYesNoTypeId == SpecTypeId.Boolean.YesNo)
+                        {
+                            familyManager.Set(newParameter, 0); // Set to 'false' (unchecked)
+                        }
+#endif
+                    }
+                    //----------------------
+                    IFamilyLoadOptions famLoadOptions = new FamilyLoadOptions();
+                    famLoadOptions.OnFamilyFound(true, out bool overwriteParameterValues);
+                    familyDoc.LoadFamily(doc, famLoadOptions);
+                    //----------------------
+                    trans.Commit();
+                }
+                return familyDoc;
+            }
+            catch (Exception ex)
+            {
+                message = $"Error: {ex.Message}";
+                return null;
+            }
         }
 
         private static string SeveRfaToTempFile(string fileName, Document familyDoc)
