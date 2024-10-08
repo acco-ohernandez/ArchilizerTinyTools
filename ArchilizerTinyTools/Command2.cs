@@ -19,41 +19,29 @@ namespace ArchilizerTinyTools
     [Transaction(TransactionMode.Manual)]
     public class Command2 : IExternalCommand
     {
-
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
             // Get the active application and document
             UIApplication uiapp = commandData.Application;
             UIDocument uidoc = uiapp.ActiveUIDocument;
             Document doc = uidoc.Document;
-
-            // Step 1: Retrieve the title block family symbol
-            //FamilySymbol titleBlock = GetTitleBlockFamilySymbols(doc)
-            //    .Where(tv => tv.Name == "30x42")
-            //    .Where(t => t.FamilyName == "ACCO TITLE BLOCK")
-            //    .FirstOrDefault();
-            var titleBlock = GetTitleBlockFamily(doc, "ACCO TITLE BLOCK");
-
-
-
-            if (titleBlock == null)
-            {
-                message = "Title block not found.";
-                return Result.Failed;
-            }
-
-            // Step 2: Open the family document for editing
-            Document familyDoc = doc.EditFamily(titleBlock);
-
-            // Step 3: Add the parameter to the family document
-            // Step 3: Add the parameter to the family document
-
             try
             {
+                // Step 1: Retrieve the title block family symbol
+                var titleBlock = GetTitleBlockFamily(doc, "ACCO TITLE BLOCK");
+                if (titleBlock == null)
+                {
+                    message = "Title block not found.";
+                    return Result.Failed;
+                }
+
+                // Step 2: Open the family document for editing
+                Document familyDoc = doc.EditFamily(titleBlock);
+
+                // Step 3: Add the parameter to the family document
+
                 using (Transaction trans = new Transaction(familyDoc, "Add Family Parameter"))
                 {
-
-
                     FamilyManager familyManager = familyDoc.FamilyManager;
                     if (familyManager == null)
                     {
@@ -61,35 +49,49 @@ namespace ArchilizerTinyTools
                         return Result.Failed;
                     }
 
-                    // Define a new parameter group
-                    BuiltInParameterGroup parameterGroup = BuiltInParameterGroup.PG_VISIBILITY;
-
                     // Set the parameter as instance type
                     bool isInstance = true;
 
                     // Define the new parameter name
-                    string newParameterName = "Area B";  // Or pass this dynamically
-                    trans.Start();
+                    string newParameterName = "Area F";  // Or pass this dynamically
+                    trans.Start();  // ---------- Start the transaction ----------
 
 #if REVIT2021
-                 // Revit 2021 uses ParameterType
-                 ParameterType parameterType = ParameterType.YesNo;
+                    // Define a new parameter group
+                    BuiltInParameterGroup parameterGroup = BuiltInParameterGroup.PG_VISIBILITY;
 
-                 // Create a new family parameter for Revit 2021
-                 FamilyParameter newParameter = familyManager.AddParameter(
-                     newParameterName,
-                     parameterGroup,
-                     parameterType,
-                     isInstance
-                 );
+                    // Revit 2021 uses ParameterType
+                    ParameterType parameterType = ParameterType.YesNo;
+
+                    // Create a new family parameter for Revit 2021
+                    FamilyParameter newParameter = familyManager.AddParameter(
+                        newParameterName,
+                        parameterGroup,
+                        parameterType,
+                        isInstance
+                    );
+
+                    // start a sub-transaction to set the default value of the parameter
+                    using (SubTransaction subTrans = new SubTransaction(familyDoc))
+                    {
+                        subTrans.Start();  // ---------- Start the sub-transaction ----------
+                        // Set the parameter's default value to false (unchecked)
+                        if (parameterType == ParameterType.YesNo)
+                        {
+                            familyManager.Set(newParameter, 0); // Set to 'false' (unchecked)
+                        }
+                        subTrans.Commit();  // ---------- Commit the sub-transaction ----------
+                    }
 
 #elif REVIT2022 || REVIT2023 || REVIT2024
                     // Revit 2022 and newer use ForgeTypeId for the parameter type but BuiltInParameterGroup for the group
                     ForgeTypeId parameterYesNoTypeId = SpecTypeId.Boolean.YesNo;  // This is the Yes/No type parameter
                     ForgeTypeId groupTypeId = GroupTypeId.Visibility;  // This is the Visibility group
+
+                    // Get the family category
                     var familyCategory = familyDoc.OwnerFamily.FamilyCategory;
 
-
+                    // Create a new family parameter for Revit 2022 and newer
                     FamilyParameter newParameter = familyManager.AddParameter(
                         newParameterName,
                         groupTypeId,
@@ -97,25 +99,19 @@ namespace ArchilizerTinyTools
                         isInstance
                     );
 
+                    // Set the parameter's default value to false (unchecked)
+                    if (parameterYesNoTypeId == SpecTypeId.Boolean.YesNo)
+                    {
+                        familyManager.Set(newParameter, 0); // Set to 'false' (unchecked)
+                    }
 #endif
-
 
                     // Commit the transaction that adds the parameter in the family document
                     trans.Commit();
                 }
 
-                // get the temp folder path
-                string tempFolder = Path.GetTempPath();
-
-                string tmpFile = Path.Combine(tempFolder, titleBlock.Name + ".rfa");
-
-                if (File.Exists(tmpFile))
-                    File.Delete(tmpFile);
-
-                familyDoc.SaveAs(tmpFile);
-                familyDoc.Close(false);
-
-
+                // Save to a temporary file and load the family back into the project
+                string tmpFile = SeveRfaToTempFile(titleBlock.Name, familyDoc);
                 using (Transaction trans = new Transaction(doc, "Load family."))
                 {
                     trans.Start();
@@ -134,6 +130,20 @@ namespace ArchilizerTinyTools
             return Result.Succeeded;
         }
 
+        private static string SeveRfaToTempFile(string fileName, Document familyDoc)
+        {
+            string tempFolder = Path.GetTempPath();
+
+            string tmpFile = Path.Combine(tempFolder, fileName + ".rfa");
+
+            if (File.Exists(tmpFile))
+                File.Delete(tmpFile);
+
+            familyDoc.SaveAs(tmpFile);
+            familyDoc.Close(false);
+            return tmpFile;
+        }
+
         // Helper method to get the title block family symbols
         private static List<FamilySymbol> GetTitleBlockFamilySymbols(Document doc)
         {
@@ -143,16 +153,7 @@ namespace ArchilizerTinyTools
                             .Cast<FamilySymbol>()
                             .ToList();
         }
-        private static Family GetTitleBlockFamily2(Document doc, string famName)
-        {
-            return new FilteredElementCollector(doc)
-                            .OfCategory(BuiltInCategory.OST_TitleBlocks)
-                            .WhereElementIsNotElementType()
-                            .Cast<Family>()
-                            .Where(f => f.Name == famName)
-                            .FirstOrDefault();
 
-        }
         private static Family GetTitleBlockFamily(Document doc, string famName)
         {
             // Collect all FamilySymbols in the TitleBlocks category
@@ -167,44 +168,7 @@ namespace ArchilizerTinyTools
             return titleBlockSymbol?.Family;
         }
 
-
-
-
         // Implement LoadFamilyOptions class (optional customization)
-        private class LoadFamilyOptions : IFamilyLoadOptions
-        {
-            public bool OnFamilyFound(bool familyInUse, out bool overwriteParameterValues)
-            {
-                overwriteParameterValues = true;  // Overwrite existing parameter values
-                return true;  // Load family regardless if it’s already in use
-            }
-
-            public bool OnSharedFamilyFound(Family sharedFamily, bool familyInUse, out FamilySource source, out bool overwriteParameterValues)
-            {
-                source = FamilySource.Project;
-                overwriteParameterValues = true;  // Overwrite shared family
-                return true;
-            }
-        }
-
-
-
-        internal static PushButtonData GetButtonData()
-        {
-            // use this method to define the properties for this command in the Revit ribbon
-            string buttonInternalName = "btnCommand2";
-            string buttonTitle = "Button 2";
-
-            ButtonDataClass myButtonData1 = new ButtonDataClass(
-                buttonInternalName,
-                buttonTitle,
-                MethodBase.GetCurrentMethod().DeclaringType?.FullName,
-                Properties.Resources.Blue_32,
-                Properties.Resources.Blue_16,
-                "This is a tooltip for Button 2");
-
-            return myButtonData1.Data;
-        }
         private class FamilyLoadOptions : IFamilyLoadOptions
         {
             public bool OnFamilyFound(bool familyInUse, out bool overwriteParameterValues)
@@ -220,5 +184,23 @@ namespace ArchilizerTinyTools
                 return true;
             }
         }
+
+        //internal static PushButtonData GetButtonData()
+        //{
+        //    // use this method to define the properties for this command in the Revit ribbon
+        //    string buttonInternalName = "btnCommand2";
+        //    string buttonTitle = "Button 2";
+
+        //    ButtonDataClass myButtonData1 = new ButtonDataClass(
+        //        buttonInternalName,
+        //        buttonTitle,
+        //        MethodBase.GetCurrentMethod().DeclaringType?.FullName,
+        //        Properties.Resources.Blue_32,
+        //        Properties.Resources.Blue_16,
+        //        "This is a tooltip for Button 2");
+
+        //    return myButtonData1.Data;
+        //}
+
     }
 }
