@@ -169,12 +169,15 @@
       <DependentUpon>ResultGridsForm.xaml</DependentUpon>
     </Compile>
     <Compile Include="Forms\TitleBlockInfo.cs" />
+    <Compile Include="Forms\TitleBlocksListForm.xaml.cs">
+      <DependentUpon>TitleBlocksListForm.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Forms\ViewInfo.cs" />
     <Compile Include="Forms\ViewsToSheets_Form.xaml.cs">
       <DependentUpon>ViewsToSheets_Form.xaml</DependentUpon>
     </Compile>
     <Compile Include="Utils\ButtonDataClass.cs" />
-    <Compile Include="Command2.cs" />
+    <Compile Include="Cmd_CreateKeyPlanRegions.cs" />
     <Compile Include="Command1.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -207,6 +210,10 @@
   <ItemGroup />
   <ItemGroup>
     <Page Include="Forms\ResultGridsForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Forms\TitleBlocksListForm.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

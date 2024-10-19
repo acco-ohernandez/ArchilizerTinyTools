@@ -10,10 +10,10 @@
     <VendorDescription>YOUR COMPANY NAME, YOUR COMPANY URL</VendorDescription>
   </AddIn>-->
   <AddIn Type="Command">
-    <Text>ArchilizerTinyTools - Command 2</Text>
+    <Text>Create Key Plan Regions</Text>
     <Description>Some description for ArchilizerTinyTools</Description>
     <Assembly>ArchilizerTinyTools.dll</Assembly>
-    <FullClassName>ArchilizerTinyTools.Command2</FullClassName>
+    <FullClassName>ArchilizerTinyTools.Cmd_CreateKeyPlanRegions</FullClassName>
     <ClientId>64822ca3-8877-42b7-85ab-51b255767b91</ClientId>
     <VendorId>com.YOUR COMPANY NAME</VendorId>
     <VendorDescription>YOUR COMPANY NAME, YOUR COMPANY URL</VendorDescription>
