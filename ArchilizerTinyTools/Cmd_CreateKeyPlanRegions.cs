@@ -56,21 +56,23 @@ namespace ArchilizerTinyTools
 
             try
             {
-                // Usage example
-                var titleBlockListSymbols = GetTitleBlockFamilySymbolsT(doc);
+                //// Usage example
+                //var titleBlockListSymbols = GetTitleBlockFamilySymbolsT(doc);
 
-                // Create and show the form
-                var titleBlocksListForm = new TitleBlocksListForm();
-                titleBlocksListForm.LoadTitleBlocks(titleBlockListSymbols);
-                titleBlocksListForm.ShowDialog();
+                //// Create and show the form
+                //var titleBlocksListForm = new TitleBlocksListForm();
+                //titleBlocksListForm.LoadTitleBlocks(titleBlockListSymbols);
+                //titleBlocksListForm.ShowDialog();
 
-                // Get the selected title block from the form
-                var selectedTitleBlock = titleBlocksListForm.GetSelectedTitleBlock();
-                if (selectedTitleBlock == null)
-                    return Result.Failed;
+                //// Get the selected title block from the form
+                //var selectedTitleBlock = titleBlocksListForm.GetSelectedTitleBlock();
+                //if (selectedTitleBlock == null)
+                //    return Result.Failed;
 
-                var selectedFamilyName = selectedTitleBlock.FamilyName;
-                var titleBlock = GetTitleBlockFamilyByName(doc, selectedFamilyName);
+                //var selectedFamilyName = selectedTitleBlock.FamilyName;
+                ////var titleBlock = GetTitleBlockFamilyByName(doc, selectedFamilyName);
+
+                var titleBlock = GetTitleBlockFamilyByName(doc, selectedTitleBlockFam.FamilyName);
 
                 // Step 1: Retrieve the title block family symbol
                 //var titleBlock = GetTitleBlockFamilyByName(doc, "ACCO TITLE BLOCK");
@@ -84,7 +86,8 @@ namespace ArchilizerTinyTools
 
 
                 // Step 2: Add the parameter to the title block family
-                Document familyDoc = AddParameterToTitleBlockFamily(doc, titleBlock, listOfNewParamNames, out message);
+                //Document familyDoc = AddParameterToTitleBlockFamily(doc, titleBlock, listOfNewParamNames, out message);
+                Document familyDoc = AddParameterToTitleBlockFamily(doc, titleBlock, selectedScopeBoxNames, out message);
 
                 if (familyDoc == null)
                 {
@@ -374,7 +377,7 @@ namespace ArchilizerTinyTools
 
 
                     // Add a Yes/No parameter, visibility set to 1 = true, 0 = false
-                    int isVisibleInt = 1;
+                    int isVisibleInt = 0;
 
                     // Set the parameter as instance type
                     bool isInstance = true;
@@ -439,7 +442,7 @@ namespace ArchilizerTinyTools
                         //LinkFilledRegionVisibility(familyDoc, newParameter);
                         ListOfNewParmeters.Add(newParameter);
                     }
-                    LinkMultipleFilledRegions(familyDoc, ListOfNewParmeters);
+                    //LinkMultipleFilledRegions(familyDoc, ListOfNewParmeters);
                     //----------------------
                     IFamilyLoadOptions famLoadOptions = new FamilyLoadOptions();
                     famLoadOptions.OnFamilyFound(true, out bool overwriteParameterValues);

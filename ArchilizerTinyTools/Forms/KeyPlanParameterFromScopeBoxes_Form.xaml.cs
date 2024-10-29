@@ -25,6 +25,9 @@ namespace ArchilizerTinyTools.Forms
         {
             InitializeComponent();
 
+            // Attach the KeyDown event handler to the form
+            this.KeyDown += KeyPlanParameterFromScopeBoxes_Form_KeyDown;
+
             // Assign the document
             _doc = doc;
 
@@ -80,8 +83,31 @@ namespace ArchilizerTinyTools.Forms
         // OK button click handler
         private void btn_OK_Click(object sender, RoutedEventArgs e)
         {
+            // if user has not selected any dg_ScopeBoxes items, show a message box and return
+            if (dg_ScopeBoxes.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("Please select at least one Scope Box.", "No Scope Box Selected", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            // if user has not selected any dg_TitleBlockFamilyName items, show a message box and return
+            if (dg_TitleBlockFamilyName.SelectedItem == null)
+            {
+                MessageBox.Show("Please select a Title Block Family Name.", "No Title Block Selected", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             this.DialogResult = true;
             this.Close();
+        }
+
+        // add ability to scape to close the form
+        private void KeyPlanParameterFromScopeBoxes_Form_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Escape)
+            {
+                this.DialogResult = false;
+                this.Close();
+            }
         }
 
         // Cancel button click handler
