@@ -386,8 +386,8 @@ namespace ArchilizerTinyTools
             string selectedSheetNameStandard)
         {
             // Check if a new location is set
-            bool newLocationSet = xyzPoint != XYZ.Zero;
-            XYZ xyzInchesPoint = newLocationSet ? xyzPoint / 12 : null;
+            bool newLocationSet = xyzPoint != XYZ.Zero; // Check if the XYZ point is not the default value of XYZ.Zero
+            XYZ xyzInchesPoint = newLocationSet ? xyzPoint / 12 : null; // Convert the XYZ point to inches
 
             // Dictionary to store created ViewSheets and associated Viewports
             var viewSheetCreated = new Dictionary<ViewSheet, List<Viewport>>();

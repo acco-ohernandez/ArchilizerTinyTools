@@ -1,12 +1,15 @@
 #region Namespaces
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Controls;
 using System.Windows.Input;
+
+using ArchilizerTinyTools.Forms;
 
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.Attributes;
@@ -21,6 +24,8 @@ namespace ArchilizerTinyTools
     [Transaction(TransactionMode.Manual)]
     public class Cmd_CreateKeyPlanRegions : IExternalCommand
     {
+        public string SetupViewName { get; private set; }
+
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
             // Get the active application and document
@@ -28,23 +33,54 @@ namespace ArchilizerTinyTools
             UIDocument uidoc = uiapp.ActiveUIDocument;
             Document doc = uidoc.Document;
 
+
+            //---------
+            // list of YesNo parameter names to add to the TitleBlock Family
+            // get all the elemements Ids from the view "BIM Setup View -" then get all the elements Category.Name == "Scope Boxes"
+            List<string> listOfNewParamNames = GetAllScopeBoxesFromParentBIMSetupView(doc, "BIM Setup View -"); // dynamic list of parameter names
+
+            if (!ValidateBIMSetupViewHasScopeBoxes(listOfNewParamNames)) // if the view does not exist or does not have scope boxes
+                return Result.Failed;
+
+            //---------
+            // call the KeyPlanParameterFromScopeBoxes_Form
+            var keyPlanParameterFromScopeBoxes_Form = new KeyPlanParameterFromScopeBoxes_Form(doc, listOfNewParamNames);
+            keyPlanParameterFromScopeBoxes_Form.ShowDialog();
+            if (keyPlanParameterFromScopeBoxes_Form.DialogResult == false)
+                return Result.Cancelled;
+
+            var selectedScopeBoxNames = keyPlanParameterFromScopeBoxes_Form.GetSelectedScopeBoxNames();
+
+            // Get the selected title block from the form
+            var selectedTitleBlockFam = keyPlanParameterFromScopeBoxes_Form.GetSelectedTitleBlock();
+
             try
             {
+                // Usage example
+                var titleBlockListSymbols = GetTitleBlockFamilySymbolsT(doc);
+
+                // Create and show the form
+                var titleBlocksListForm = new TitleBlocksListForm();
+                titleBlocksListForm.LoadTitleBlocks(titleBlockListSymbols);
+                titleBlocksListForm.ShowDialog();
+
+                // Get the selected title block from the form
+                var selectedTitleBlock = titleBlocksListForm.GetSelectedTitleBlock();
+                if (selectedTitleBlock == null)
+                    return Result.Failed;
+
+                var selectedFamilyName = selectedTitleBlock.FamilyName;
+                var titleBlock = GetTitleBlockFamilyByName(doc, selectedFamilyName);
+
                 // Step 1: Retrieve the title block family symbol
-                var titleBlock = GetTitleBlockFamilyByName(doc, "ACCO TITLE BLOCK");
+                //var titleBlock = GetTitleBlockFamilyByName(doc, "ACCO TITLE BLOCK");
                 if (titleBlock == null)
                 {
                     message = "Title block not found.";
                     return Result.Failed;
                 }
 
-                //---------
-                // list of YesNo parameter names to add to the TitleBlock Family
-                //var listOfNewParamNames = new List<string>() { "Area 1", "Area 2", "Area 3" }; // hard coded list of parameter names
 
-                // get all the elemements Ids from the view "BIM Setup View - " then get all the elements Category.Name == "Scope Boxes"
-                List<string> listOfNewParamNames = GetAllScopeBoxesFromView(doc, "BIM Setup View - "); // dynamic list of parameter names
-                //---------
 
 
                 // Step 2: Add the parameter to the title block family
@@ -60,17 +96,128 @@ namespace ArchilizerTinyTools
             {
                 TaskDialog.Show("info", e.Message);
             }
-
+            // writeline ~11001100 outputs the value of: 
+            //Console.WriteLine(~11001100);// -11001101. This is called bitwise NOT operator. It inverts the bits of its operand.
             return Result.Succeeded;
         }
 
+        private bool ValidateBIMSetupViewHasScopeBoxes(List<string> listOfNewParamNames)
+        {
+            if (string.IsNullOrEmpty(SetupViewName))
+            {
+                TaskDialog.Show("Error", "No \"BIM Setup View\" found");
+                return false;
+            }
+            if (!listOfNewParamNames.Any())
+            {
+                TaskDialog.Show("Error", $"No Scope Boxes found in the view: \n {SetupViewName}");
+                return false;
+            }
+            return true;
+        }
+
+
+        // Example method to get title block family symbols
+        public List<TitleBlockInfo> GetTitleBlockFamilySymbolsT(Document doc)
+        {
+            // Use FilteredElementCollector to find title block family symbols in the document
+            var titleBlocks = new FilteredElementCollector(doc)
+                .OfCategory(BuiltInCategory.OST_TitleBlocks)
+                .OfClass(typeof(FamilySymbol))
+                .Cast<FamilySymbol>()
+                .Select(ts => new TitleBlockInfo(ts)) // Use the constructor to create TitleBlockInfo instances
+                .ToList();
+
+            return titleBlocks;
+        }
+
+        //public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+        //{
+        //    // Get the active application and document
+        //    UIApplication uiapp = commandData.Application;
+        //    UIDocument uidoc = uiapp.ActiveUIDocument;
+        //    Document doc = uidoc.Document;
+
+        //    try
+        //    {
+        //        // Step 1: Retrieve the title block family symbol
+        //        var titleBlock = GetTitleBlockFamilyByName(doc, "ACCO TITLE BLOCK");
+        //        if (titleBlock == null)
+        //        {
+        //            message = "Title block not found.";
+        //            return Result.Failed;
+        //        }
+
+        //        //---------
+        //        // list of YesNo parameter names to add to the TitleBlock Family
+        //        //var listOfNewParamNames = new List<string>() { "Area 1", "Area 2", "Area 3" }; // hard coded list of parameter names
+
+        //        // get all the elemements Ids from the view "BIM Setup View - " then get all the elements Category.Name == "Scope Boxes"
+        //        List<string> listOfNewParamNames = GetAllScopeBoxesFromView(doc, "BIM Setup View - "); // dynamic list of parameter names
+        //        //---------
+
+
+        //        // Step 2: Add the parameter to the title block family
+        //        Document familyDoc = AddParameterToTitleBlockFamily(doc, titleBlock, listOfNewParamNames, out message);
+
+        //        if (familyDoc == null)
+        //        {
+        //            message = "Error adding parameter to title block family.";
+        //            return Result.Failed;
+        //        }
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        TaskDialog.Show("info", e.Message);
+        //    }
+
+        //    return Result.Succeeded;
+        //}
+
+        private List<string> GetAllScopeBoxesFromParentBIMSetupView(Document doc, string viewName)
+        {
+            //Find the view by its name
+            View targetView = new FilteredElementCollector(doc)
+                .OfClass(typeof(View))
+                .Cast<View>()
+                .FirstOrDefault(view => view.GetPrimaryViewId() == ElementId.InvalidElementId &&
+                                view.Name != null &&
+                                view.Name.StartsWith(viewName));
+
+
+
+            if (targetView != null)
+            {
+                // update global variable with view name
+                SetupViewName = targetView.Name;
+
+                // Get all elements in the target view with Category Name "Scope Boxes"
+                var ListOfScopeBoxNames = new FilteredElementCollector(doc, targetView.Id)
+                    .OfCategory(BuiltInCategory.OST_VolumeOfInterest)
+                    .WhereElementIsNotElementType()
+                    .Select(i => i.Name)
+                    .ToList();
+
+                // return list of scope box names
+                return ListOfScopeBoxNames;
+            }
+            else
+            {
+                // Return an empty list if the view is not found
+                return new List<string>();
+            }
+        }
         private List<string> GetAllScopeBoxesFromView(Document doc, string viewName)
         {
-            // Find the view by its name
+            //Find the view by its name
             View targetView = new FilteredElementCollector(doc)
                 .OfClass(typeof(View))
                 .Cast<View>()
                 .FirstOrDefault(view => view.Name.StartsWith(viewName));
+
+
+            // update global variable with view name
+            SetupViewName = targetView.Name;
 
             if (targetView != null)
             {

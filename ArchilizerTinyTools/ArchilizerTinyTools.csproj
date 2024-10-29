@@ -165,9 +165,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.cs" />
+    <Compile Include="Forms\KeyPlanParameterFromScopeBoxes_Form.xaml.cs">
+      <DependentUpon>KeyPlanParameterFromScopeBoxes_Form.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Forms\ResultGridsForm.xaml.cs">
       <DependentUpon>ResultGridsForm.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Forms\ViewScopeBoxesInfo.cs" />
     <Compile Include="Forms\TitleBlockInfo.cs" />
     <Compile Include="Forms\TitleBlocksListForm.xaml.cs">
       <DependentUpon>TitleBlocksListForm.xaml</DependentUpon>
@@ -209,6 +213,10 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <Page Include="Forms\KeyPlanParameterFromScopeBoxes_Form.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Forms\ResultGridsForm.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

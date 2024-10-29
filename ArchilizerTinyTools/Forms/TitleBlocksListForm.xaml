@@ -8,38 +8,47 @@
         Title="TitleBlocksListForm" Height="450" Width="800">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="50"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="50"/>
         </Grid.RowDefinitions>
-        <DataGrid x:Name="TitleBlocksDataGrid" Grid.Row="1" 
-                  AutoGenerateColumns="False" 
+
+        <!-- DataGrid for displaying title blocks -->
+        <DataGrid x:Name="TitleBlocksDataGrid" 
+                  Grid.Row="1"
+                  AutoGenerateColumns="False"
                   CanUserAddRows="False" 
                   CanUserDeleteRows="False" 
                   CanUserReorderColumns="False" 
-                  CanUserResizeColumns="False" 
+                  CanUserResizeColumns="True" 
                   CanUserResizeRows="False" 
-                  CanUserSortColumns="False" 
+                  CanUserSortColumns="True" 
                   IsReadOnly="True"
-                  ItemsSource="{Binding TitleBlocks}"
-                  
-                  GridLinesVisibility="None"
+                  ItemsSource="{Binding}"
                   AlternatingRowBackground="AliceBlue"
                   SelectionMode="Single"
                   EnableColumnVirtualization="False"
                   EnableRowVirtualization="True"
-                  Width="auto"
-                  Height="auto"
                   MinWidth="300"
                   Margin="10"
-                  MouseDoubleClick="dg_MouseDoubleClick" 
-                  SelectionChanged="TitleBlocksDataGrid_SelectionChanged"
-                  HeadersVisibility="Column"
-                  >
+                  HeadersVisibility="Column">
+
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Title" Binding="{Binding Title}"/>
-                <DataGridTextColumn Header="Title" Binding="{Binding Name}"/>
+                <DataGridTextColumn Header="Title" Binding="{Binding FamilyName}"/>
+                <DataGridTextColumn Header="Name" Binding="{Binding TitleBlockName}"/>
             </DataGrid.Columns>
+
         </DataGrid>
+
+        <!-- OK Button -->
+        <Button Grid.Row="2" 
+                x:Name="btn_OK" 
+                Content="Ok" 
+                Width="80"
+                Height="30"
+                HorizontalAlignment="Center" 
+                VerticalAlignment="Center"
+                Click="btn_OK_Click"/>
 
     </Grid>
 </Window>
