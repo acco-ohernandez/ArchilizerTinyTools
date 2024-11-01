@@ -89,6 +89,8 @@ namespace ArchilizerTinyTools
                 //Document familyDoc = AddParameterToTitleBlockFamily(doc, titleBlock, listOfNewParamNames, out message);
                 Document familyDoc = AddParameterToTitleBlockFamily(doc, titleBlock, selectedScopeBoxNames, out message);
 
+
+
                 if (familyDoc == null)
                 {
                     message = "Error adding parameter to title block family.";
@@ -354,6 +356,115 @@ namespace ArchilizerTinyTools
                 return null;
             }
         }
+
+        private Document AddParameterToTitleBlockFamily3(Document doc, Family titleBlock, List<string> listOfNewParamNames, out string message)
+        {
+            message = string.Empty;
+
+            try
+            {
+                // Open the title block family for editing
+                Document familyDoc = doc.EditFamily(titleBlock);
+
+                // Start a transaction to add the parameter
+                using (Transaction trans = new Transaction(familyDoc, "Add Yes/No Parameter"))
+                {
+                    trans.Start();  // ---------- Start the transaction ----------
+
+                    FamilyManager familyManager = familyDoc.FamilyManager;
+                    if (familyManager == null)
+                    {
+                        message = "FamilyManager not available in the family document.";
+                        return null;
+                    }
+
+
+                    // Add a Yes/No parameter, visibility set to 1 = true, 0 = false
+                    int isVisibleInt = 0;
+
+                    // Set the parameter as instance type
+                    bool isInstance = true;
+                    List<FamilyParameter> ListOfNewParmeters = new List<FamilyParameter>();
+                    // Define the new parameter name
+                    foreach (var newParameterName in listOfNewParamNames)
+                    {
+                        // if the parameter already exists, set the newParameter to the existing parameter
+                        FamilyParameter existingParameter = familyManager.get_Parameter(newParameterName);
+
+#if REVIT2021
+                        // Define a new parameter group
+                        BuiltInParameterGroup parameterGroup = BuiltInParameterGroup.PG_VISIBILITY;
+
+                        // Revit 2021 uses ParameterType
+                        ParameterType parameterType = ParameterType.YesNo;
+
+                        // Create a new family parameter for Revit 2021
+                        FamilyParameter newParameter = familyManager.AddParameter(
+                            newParameterName,
+                            parameterGroup,
+                            parameterType,
+                            isInstance
+                        );
+
+                        // start a sub-transaction to set the default value of the parameter
+                        using (SubTransaction subTrans = new SubTransaction(familyDoc))
+                        {
+                            subTrans.Start();  // ---------- Start the sub-transaction ----------
+                                               // Set the parameter's default value to false (unchecked)
+                            if (parameterType == ParameterType.YesNo)
+                            {
+                                familyManager.Set(newParameter, isVisibleInt); // Set to 'false' (unchecked)
+                            }
+                            subTrans.Commit();  // ---------- Commit the sub-transaction ----------
+                        }
+
+#elif REVIT2022 || REVIT2023 || REVIT2024
+                        // Revit 2022 and newer use ForgeTypeId for the parameter type but BuiltInParameterGroup for the group
+                        ForgeTypeId parameterYesNoTypeId = SpecTypeId.Boolean.YesNo;  // This is the Yes/No type parameter
+                        ForgeTypeId groupTypeId = GroupTypeId.Visibility;  // This is the Visibility group
+
+                        // Get the family category
+                        var familyCategory = familyDoc.OwnerFamily.FamilyCategory;
+
+                        // Create a new family parameter for Revit 2022 and newer
+                        FamilyParameter newParameter = familyManager.AddParameter(
+                            newParameterName,
+                            groupTypeId,
+                            parameterYesNoTypeId,
+                            isInstance
+                        );
+
+                        // Set the parameter's default value to false (unchecked)
+                        if (parameterYesNoTypeId == SpecTypeId.Boolean.YesNo)
+                        {
+                            familyManager.Set(newParameter, isVisibleInt); // Set to 'false' (unchecked)
+                        }
+#endif
+
+                        // Method to add a fill region to the title block family and link its visibility to the newParameterName 
+                        //LinkFilledRegionVisibility(familyDoc, newParameter);
+                        ListOfNewParmeters.Add(newParameter);
+                    }
+                    // This method will create a filled region for each parameter and link its visibility to the parameter
+                    //LinkMultipleFilledRegions(familyDoc, ListOfNewParmeters);
+                    //----------------------
+                    IFamilyLoadOptions famLoadOptions = new FamilyLoadOptions();
+                    famLoadOptions.OnFamilyFound(true, out bool overwriteParameterValues);
+                    familyDoc.LoadFamily(doc, famLoadOptions);
+                    //----------------------
+                    trans.Commit();
+                }
+                return familyDoc;
+            }
+            catch (Exception ex)
+            {
+                TaskDialog.Show("info-", ex.Message);
+                message = $"Error: {ex.Message}";
+                return null;
+            }
+        }
+
+
         private Document AddParameterToTitleBlockFamily(Document doc, Family titleBlock, List<string> listOfNewParamNames, out string message)
         {
             message = string.Empty;
@@ -442,6 +553,7 @@ namespace ArchilizerTinyTools
                         //LinkFilledRegionVisibility(familyDoc, newParameter);
                         ListOfNewParmeters.Add(newParameter);
                     }
+                    // This method will create a filled region for each parameter and link its visibility to the parameter
                     //LinkMultipleFilledRegions(familyDoc, ListOfNewParmeters);
                     //----------------------
                     IFamilyLoadOptions famLoadOptions = new FamilyLoadOptions();
@@ -450,6 +562,10 @@ namespace ArchilizerTinyTools
                     //----------------------
                     trans.Commit();
                 }
+
+                // Explicitly close the family document to ensure it is not left open
+                familyDoc.Close(false);
+
                 return familyDoc;
             }
             catch (Exception ex)
@@ -459,6 +575,9 @@ namespace ArchilizerTinyTools
                 return null;
             }
         }
+
+
+
 
         private void LinkMultipleFilledRegions(Document familyDoc, List<FamilyParameter> parameters)
         {
@@ -865,22 +984,22 @@ namespace ArchilizerTinyTools
             }
         }
 
-        //internal static PushButtonData GetButtonData()
-        //{
-        //    // use this method to define the properties for this command in the Revit ribbon
-        //    string buttonInternalName = "btnCommand2";
-        //    string buttonTitle = "Button 2";
+        internal static PushButtonData GetButtonData()
+        {
+            // use this method to define the properties for this command in the Revit ribbon
+            string buttonInternalName = "btnCommand2";
+            string buttonTitle = "Create\nYesNo Params";
 
-        //    ButtonDataClass myButtonData1 = new ButtonDataClass(
-        //        buttonInternalName,
-        //        buttonTitle,
-        //        MethodBase.GetCurrentMethod().DeclaringType?.FullName,
-        //        Properties.Resources.Blue_32,
-        //        Properties.Resources.Blue_16,
-        //        "This is a tooltip for Button 2");
+            ButtonDataClass myButtonData1 = new ButtonDataClass(
+                buttonInternalName,
+                buttonTitle,
+                MethodBase.GetCurrentMethod().DeclaringType?.FullName,
+                Properties.Resources.Blue_32,
+                Properties.Resources.Blue_16,
+                "This button will add Yes/No Parameters to a Title Block Family based on the scope boxes from the \"BIM Setup View -\".");
 
-        //    return myButtonData1.Data;
-        //}
+            return myButtonData1.Data;
+        }
 
     }
 }

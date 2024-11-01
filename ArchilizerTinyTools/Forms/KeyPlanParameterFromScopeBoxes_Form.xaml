@@ -28,7 +28,7 @@
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="2*"/>
             </Grid.ColumnDefinitions>
 
             <!-- DataGrid for displaying Scope Box Names-->
@@ -46,7 +46,7 @@
           SelectionMode="Extended"
           EnableColumnVirtualization="False"
           EnableRowVirtualization="True"
-          MinWidth="300"
+          MinWidth="250"
           Margin="10"
           HeadersVisibility="Column">
                 <DataGrid.Columns>
