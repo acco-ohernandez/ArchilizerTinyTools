@@ -51,6 +51,14 @@ namespace ArchilizerTinyTools
             Document doc = uiapp.ActiveUIDocument.Document;
             CurrentDoc = doc;
 
+            // Verify that the Project Parameter "Sheet Type" exists in the document and it's associated with views, if not , show a message and return failed
+            if (!IsParameterAssociatedWithViews(doc, "Sheet Type"))
+            {
+                TaskDialog.Show("Action Required", "Please copy over the latest View Templates from the Container Model before proceeding.");
+                return Result.Failed;
+            }
+
+
             // if the failedViewsToSheets is null, create a new list, if not clear the list
             failedViewsToSheets = failedViewsToSheets ?? new List<string>();
             failedViewsToSheets.Clear();
@@ -187,6 +195,41 @@ namespace ArchilizerTinyTools
                 ShowResultsForm();
 
             return Result.Succeeded;
+        }
+
+
+
+        public bool IsParameterAssociatedWithViews(Document doc, string parameterName)
+        {
+            // Get the project parameters (shared parameters)
+            BindingMap bindingMap = doc.ParameterBindings;
+            DefinitionBindingMapIterator iterator = bindingMap.ForwardIterator();
+
+            // Iterate through each parameter in the project
+            while (iterator.MoveNext())
+            {
+                Definition definition = iterator.Key as Definition;
+                ElementBinding binding = iterator.Current as ElementBinding;
+
+                // Check if the parameter name matches
+                if (definition != null && definition.Name == parameterName)
+                {
+                    // Check if the parameter is associated with Views
+                    if (binding != null)
+                    {
+                        foreach (Category category in binding.Categories)
+                        {
+                            if (category.Id.IntegerValue == (int)BuiltInCategory.OST_Views)
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Return false if not found or not associated with views
+            return false;
         }
 
         private void ShowResultsForm()
@@ -443,7 +486,8 @@ namespace ArchilizerTinyTools
                             viewPortsCreated.Add(newViewPort);
                         }
 
-                        LeftAlignViewPortToTitleBlock(doc, newViewSheet, newViewPort, titleBlockCenter, xyzInchesPoint);
+                        //LeftAlignViewPortToTitleBlock(doc, newViewSheet, newViewPort, titleBlockCenter, xyzInchesPoint);
+                        LeftAlignViewPortToTitleBlock2(doc, newViewSheet, newViewPort, xyzInchesPoint);
                         //TopAlignViewPortToTibleBlock(doc, newViewSheet, newViewPort, titleBlockCenter, xyzInchesPoint);
 
                         // Add the new sheet and associated viewports to the dictionary
@@ -558,6 +602,131 @@ namespace ArchilizerTinyTools
         //    ElementTransformUtils.MoveElement(doc, newViewPort.Id, newLocation);
         //}
 
+        private void LeftAlignViewPortToTitleBlock2(Document doc, ViewSheet newViewSheet, Viewport newViewPort, XYZ offset = null)
+        {
+            // Retrieve the title block instance on the sheet
+            FamilyInstance titleBlockInstance = new FilteredElementCollector(doc, newViewSheet.Id)
+                .OfCategory(BuiltInCategory.OST_TitleBlocks)
+                .WhereElementIsNotElementType()
+                .Cast<FamilyInstance>()
+                .FirstOrDefault();
+
+            if (titleBlockInstance == null)
+                throw new InvalidOperationException($"No title block found on the provided sheet (Sheet ID: {newViewSheet.Id}).");
+
+            // Get the title block's bounding box
+            BoundingBoxXYZ titleBlockBoundingBox = titleBlockInstance.get_BoundingBox(newViewSheet);
+            if (titleBlockBoundingBox == null)
+                throw new InvalidOperationException($"Could not retrieve the bounding box of the title block on Sheet ID: {newViewSheet.Id}.");
+
+            // Retrieve the bounding box of the viewport
+            BoundingBoxXYZ viewPortBoundingBox = newViewPort.get_BoundingBox(newViewSheet);
+            if (viewPortBoundingBox == null)
+                throw new InvalidOperationException($"Could not retrieve the bounding box of the viewport (Viewport ID: {newViewPort.Id}).");
+
+            // Calculate the distance required to align the left edge of the viewport with the left edge of the title block
+            // Example: titleBlockBoundingBox.Min.X = 10.0, viewPortBoundingBox.Min.X = 15.0, distanceToMoveX = 10.0 - 15.0 = -5.0
+            double distanceToMoveX = titleBlockBoundingBox.Min.X - viewPortBoundingBox.Min.X;
+
+            // Convert nudge distance from inches to feet and apply it to the move vector
+            const double nudgeInInches = 1.3;
+            double nudgeOffsetFeet = nudgeInInches / 12.0;
+
+            // Create the movement vector
+            XYZ moveVector = new XYZ(distanceToMoveX + nudgeOffsetFeet, 0, 0);
+
+            // Apply additional offset if provided
+            if (offset != null && !offset.IsZeroLength())
+                moveVector += offset;
+
+            // Move the viewport to align with the title block
+            ElementTransformUtils.MoveElement(doc, newViewPort.Id, moveVector);
+        }
+
+        private void LeftAlignViewPortToTitleBlock2_0(Document doc, ViewSheet newViewSheet, Viewport newViewPort, XYZ offset = null)
+        {
+            // Retrieve the title block instance on the sheet
+            FamilyInstance titleBlockInstance = new FilteredElementCollector(doc, newViewSheet.Id)
+                .OfCategory(BuiltInCategory.OST_TitleBlocks)
+                .Cast<FamilyInstance>()
+                .FirstOrDefault();
+
+            if (titleBlockInstance == null)
+                throw new InvalidOperationException("No title block found on the provided sheet.");
+
+            // Get the title block's bounding box
+            BoundingBoxXYZ titleBlockBoundingBox = titleBlockInstance.get_BoundingBox(newViewSheet);
+            if (titleBlockBoundingBox == null)
+                throw new InvalidOperationException("Could not retrieve the bounding box of the title block.");
+
+            // Retrieve the bounding box of the viewport
+            BoundingBoxXYZ viewPortBoundingBox = newViewPort.get_BoundingBox(newViewSheet);
+            if (viewPortBoundingBox == null)
+                throw new InvalidOperationException("Could not retrieve the bounding box of the viewport.");
+
+            // Calculate the distance required to align the left edge of the viewport with the left edge of the title block
+            double distanceToMoveX = titleBlockBoundingBox.Min.X - viewPortBoundingBox.Min.X;
+
+            // Adjust the viewport position by nudging it to the right by  1.3 inches
+            double nudgeInInches = 1.3; // Adjust as necessary
+            double nudgeInFeet = nudgeInInches / 12.0; // Convert inches to feet
+
+            // Apply the nudge to the movement distance
+            XYZ moveVector = new XYZ(distanceToMoveX + nudgeInFeet, 0, 0);
+
+            // Apply an additional offset if provided provided by the user if any.
+            if (offset != null)
+                moveVector += offset;
+
+            // Move the viewport to align with the title block
+            ElementTransformUtils.MoveElement(doc, newViewPort.Id, moveVector);
+        }
+
+
+        private void LeftAlignViewPortToTitleBlock2(Document doc, ViewSheet newViewSheet, Viewport newViewPort, XYZ _titleBlockCenter, XYZ xyzInchesPoint)
+        {
+            // Get the title block instance on the sheet
+            FamilyInstance titleBlockInstance = new FilteredElementCollector(doc, newViewSheet.Id)
+                .OfCategory(BuiltInCategory.OST_TitleBlocks)
+                .Cast<FamilyInstance>()
+                .FirstOrDefault();
+
+            if (titleBlockInstance == null)
+                return;
+
+            // Get the title block's bounding box
+            BoundingBoxXYZ titleBlockBoundingBox = titleBlockInstance.get_BoundingBox(newViewSheet);
+
+            if (titleBlockBoundingBox == null)
+                return;
+
+            // Get the center of the title block's bounding box
+            XYZ titleBlockCenter = 0.5 * (titleBlockBoundingBox.Min + titleBlockBoundingBox.Max);
+
+            // Adjust the title block center if a new location is set
+            if (xyzInchesPoint != null)
+                titleBlockCenter += xyzInchesPoint;
+
+            // Get the center of the viewport
+            //XYZ viewPortCenter = newViewPort.GetBoxCenter();
+
+            // get the viewport bounding box
+            BoundingBoxXYZ viewPortBoundingBox = newViewPort.get_BoundingBox(newViewSheet);
+
+            // Calculate the distance to move the viewport to the left
+            double distanceToMove = titleBlockBoundingBox.Min.X - viewPortBoundingBox.Min.X;
+            // This will nudge the viewport to the right by 6.1 inches
+            var nudgeRight = Math.Abs((distanceToMove / 12) * 6.1); // 
+
+            XYZ newLocation = new XYZ(distanceToMove + nudgeRight, 0, 0);
+            if (xyzInchesPoint != null)
+            {
+                newLocation += xyzInchesPoint;
+            }
+
+            // Move the viewport to the left
+            ElementTransformUtils.MoveElement(doc, newViewPort.Id, newLocation);
+        }
         private void LeftAlignViewPortToTitleBlock(Document doc, ViewSheet newViewSheet, Viewport newViewPort, XYZ _titleBlockCenter, XYZ xyzInchesPoint)
         {
             // Get the title block instance on the sheet
@@ -590,7 +759,7 @@ namespace ArchilizerTinyTools
 
             // Calculate the distance to move the viewport to the left
             double distanceToMove = titleBlockBoundingBox.Min.X - viewPortBoundingBox.Min.X;
-            // This will nudge the viewport to the right by 5.4 inches
+            // This will nudge the viewport to the right by 6.1 inches
             var nudgeRight = Math.Abs((distanceToMove / 12) * 6.1); // 
 
             XYZ newLocation = new XYZ(distanceToMove + nudgeRight, 0, 0);

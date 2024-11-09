@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ArchilizerTinyTools.Forms"
         mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=local:SampleViewModel, IsDesignTimeCreatable=True}"
         Height="700" 
         Width="1200" 
         MinWidth="1200" 
@@ -12,6 +13,14 @@
         WindowStartupLocation="CenterScreen"
         Title="ViewsToSheets_Form" 
         >
+    <Window.Resources>
+        <Style TargetType="DataGridRow">
+            <Style.Resources>
+                <!-- Set the background color for selected rows when the DataGrid is inactive -->
+                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="Cyan"/>
+            </Style.Resources>
+        </Style>
+    </Window.Resources>
 
     <Grid Width="auto" Margin="15">
         <!-- RowDefinitions -->
@@ -23,7 +32,6 @@
             <RowDefinition Height="90" />
         </Grid.RowDefinitions>
         
-
         <!-- Row [0] -->
         <StackPanel Grid.Row="0" Orientation="Horizontal">
             <Label Content="Create sheet(s) from selected views" FontSize="20" FontWeight="Bold" />
@@ -72,24 +80,35 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <DataGrid x:Name="dgViews"  Grid.Column="0"
-                          GridLinesVisibility="None"
-                          AlternatingRowBackground="AliceBlue"
-                          CanUserReorderColumns="True"
-                          CanUserResizeRows="False"
-                          CanUserAddRows="False"
-                          SelectionMode="Extended"
-                          AutoGenerateColumns="False"
-                          EnableColumnVirtualization="False"
-                          EnableRowVirtualization="True"
-                          Width="auto"
-                          Height="auto"
-                          MinWidth="300"
-                          Margin="10"
-                          MouseDoubleClick="dg_MouseDoubleClick" 
-                          SelectionChanged="dgViews_SelectionChanged"
-                          IsReadOnly="True"
-                          HeadersVisibility="Column"
-                          >
+                      GridLinesVisibility="None"
+                      AlternatingRowBackground="AliceBlue"
+                      CanUserReorderColumns="True"
+                      CanUserResizeRows="False"
+                      CanUserAddRows="False"
+                      SelectionMode="Extended"
+                      AutoGenerateColumns="False"
+                      EnableColumnVirtualization="False"
+                      EnableRowVirtualization="True"
+                      Width="auto"
+                      Height="auto"
+                      MinWidth="300"
+                      Margin="10"
+                      MouseDoubleClick="dg_MouseDoubleClick" 
+                      SelectionChanged="dgViews_SelectionChanged"
+                      IsReadOnly="True"
+                      HeadersVisibility="Column"
+                      ItemsSource="{Binding SampleDataCollection}"
+                      >
+                <!-- This Style has been commented out because it has been applied on line 16 as a Window.Resources to apply it to all DataGrids --> 
+                <!--<DataGrid.Resources>
+                    <Style TargetType="DataGridRow">
+                        <Style.Resources>
+                            --><!-- Set the background color for selected rows when the DataGrid is inactive --><!--
+                            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="LightBlue"/>
+                        </Style.Resources>
+                    </Style>
+                </DataGrid.Resources>-->
+
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="View Type" Binding="{Binding ViewType}" />
                     <DataGridTextColumn Header="View Name" Binding="{Binding Name}" Width="auto"/>

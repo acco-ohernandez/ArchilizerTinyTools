@@ -171,6 +171,7 @@
     <Compile Include="Forms\ResultGridsForm.xaml.cs">
       <DependentUpon>ResultGridsForm.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Forms\SampleViewModel.cs" />
     <Compile Include="Forms\ViewScopeBoxesInfo.cs" />
     <Compile Include="Forms\TitleBlockInfo.cs" />
     <Compile Include="Forms\TitleBlocksListForm.xaml.cs">
