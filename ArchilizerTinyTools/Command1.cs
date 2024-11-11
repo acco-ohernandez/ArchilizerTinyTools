@@ -629,7 +629,7 @@ namespace ArchilizerTinyTools
             double distanceToMoveX = titleBlockBoundingBox.Min.X - viewPortBoundingBox.Min.X;
 
             // Convert nudge distance from inches to feet and apply it to the move vector
-            const double nudgeInInches = 1.3;
+            const double nudgeInInches = 1.668;
             double nudgeOffsetFeet = nudgeInInches / 12.0;
 
             // Create the movement vector
