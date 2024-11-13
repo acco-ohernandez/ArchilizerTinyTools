@@ -34,12 +34,14 @@ namespace ArchilizerTinyTools
 
             //// 3. Create button data instances
             //// 4. Create buttons
-            PushButtonData btnData1 = Command1.GetButtonData();
+            PushButtonData btnData1 = Cmd_ViewToSheets.GetButtonData();
             PushButton myButton1 = panel.AddItem(btnData1) as PushButton;
 
             PushButtonData btnData2 = Cmd_CreateKeyPlanRegions.GetButtonData();
             PushButton myButton2 = panel.AddItem(btnData2) as PushButton;
 
+            PushButtonData btnData3 = Cmd_SheetRegionVisibility.GetButtonData();
+            PushButton myButton3 = panel.AddItem(btnData3) as PushButton;
 
             // NOTE:
             // To create a new tool, copy lines 35 and 39 and rename the variables to "btnData3" and "myButton3". 

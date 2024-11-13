@@ -165,6 +165,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.cs" />
+    <Compile Include="Cmd_SheetRegionVisibility.cs" />
     <Compile Include="Forms\KeyPlanParameterFromScopeBoxes_Form.xaml.cs">
       <DependentUpon>KeyPlanParameterFromScopeBoxes_Form.xaml</DependentUpon>
     </Compile>
@@ -172,18 +173,22 @@
       <DependentUpon>ResultGridsForm.xaml</DependentUpon>
     </Compile>
     <Compile Include="Forms\SampleViewModel.cs" />
+    <Compile Include="Forms\ViewSheetInfo.cs" />
     <Compile Include="Forms\ViewScopeBoxesInfo.cs" />
     <Compile Include="Forms\TitleBlockInfo.cs" />
     <Compile Include="Forms\TitleBlocksListForm.xaml.cs">
       <DependentUpon>TitleBlocksListForm.xaml</DependentUpon>
     </Compile>
     <Compile Include="Forms\ViewInfo.cs" />
+    <Compile Include="Forms\ViewSheets_Form.xaml.cs">
+      <DependentUpon>ViewSheets_Form.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Forms\ViewsToSheets_Form.xaml.cs">
       <DependentUpon>ViewsToSheets_Form.xaml</DependentUpon>
     </Compile>
     <Compile Include="Utils\ButtonDataClass.cs" />
     <Compile Include="Cmd_CreateKeyPlanRegions.cs" />
-    <Compile Include="Command1.cs" />
+    <Compile Include="Cmd_ViewToSheets.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -223,6 +228,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Forms\TitleBlocksListForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Forms\ViewSheets_Form.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -28,7 +28,7 @@ using View = Autodesk.Revit.DB.View;
 namespace ArchilizerTinyTools
 {
     [Transaction(TransactionMode.Manual)]
-    public class Command1 : IExternalCommand
+    public class Cmd_ViewToSheets : IExternalCommand
     {
         // this are the variables for the Revit application which are accessible to all methods in this class
         private List<string> failedViewsToSheets;

@@ -994,8 +994,8 @@ namespace ArchilizerTinyTools
                 buttonInternalName,
                 buttonTitle,
                 MethodBase.GetCurrentMethod().DeclaringType?.FullName,
-                Properties.Resources.Blue_32,
-                Properties.Resources.Blue_16,
+                Properties.Resources.Green_32,
+                Properties.Resources.Green_16,
                 "This button will add Yes/No Parameters to a Title Block Family based on the scope boxes from the \"BIM Setup View -\".");
 
             return myButtonData1.Data;
