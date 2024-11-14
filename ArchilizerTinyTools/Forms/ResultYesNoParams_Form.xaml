@@ -1,0 +1,38 @@
+﻿<Window x:Class="ArchilizerTinyTools.Forms.ResultYesNoParams_Form"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ArchilizerTinyTools.Forms"
+        mc:Ignorable="d"
+        WindowStartupLocation="CenterScreen"
+        Title="Enabled Params Result" Height="450" Width="600">
+    <Grid>
+
+
+        <!--DataGrid Columns: Visibility Param, Sheet Number,Sheet Name -->
+        <DataGrid Grid.Row="0" 
+          x:Name="dg_ResultYeNoParams" 
+          AlternatingRowBackground="AliceBlue"
+          AutoGenerateColumns="False" 
+          CanUserAddRows="False" 
+          CanUserDeleteRows="False" 
+          CanUserReorderColumns="False" 
+          CanUserResizeColumns="True" 
+          CanUserResizeRows="False" 
+          CanUserSortColumns="True" 
+          IsReadOnly="True" 
+          SelectionMode="Extended" 
+          SelectionUnit="FullRow" 
+          HorizontalAlignment="Stretch" 
+          VerticalAlignment="Stretch" 
+          HeadersVisibility="Column"
+          Margin="10" >
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Visibility Param" Binding="{Binding ParamName}" Width="auto" />
+                <DataGridTextColumn Header="Sheet Number" Binding="{Binding SheetNumber}" Width="auto" />
+                <DataGridTextColumn Header="Sheet Name" Binding="{Binding SheetName}" Width="*" />
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Window>

@@ -30,6 +30,8 @@ namespace ArchilizerTinyTools
     [Transaction(TransactionMode.Manual)]
     public class Cmd_SheetRegionVisibility : IExternalCommand
     {
+        public static List<YesNoParamInfo> YesNoParamsResults { get; set; }
+
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
             // Revit application
@@ -39,22 +41,32 @@ namespace ArchilizerTinyTools
             Document doc = uiapp.ActiveUIDocument.Document;
 
             // Get all the viewsheet instances that contain a viewport
-            List<ViewSheet> sheetsWithViewports = GetSheetsWithViewPorts(doc);
+            //List<ViewSheet> sheetsWithViewports = GetSheetsWithViewPorts(doc);
+            List<ViewSheet> sheetsWithViewports = GetSheetsWithViewPortsAndAssociatedScopeBoxes(doc);
 
-            //// Create a list of ViewSheetInfo objects to store the view sheet information to load into the form
-            //List<ViewSheetInfo> viewSheetsToForm = new List<ViewSheetInfo>();
-            //foreach (var sheet in sheetsWithViewports)
-            //{
-            //    viewSheetsToForm.Add(new ViewSheetInfo(sheet));
-            //}
+            if (!VerifyRequirements(sheetsWithViewports))
+                return Result.Cancelled;
 
+            // Load list of ViewSheetInfo objects into ViewSheets_Form
+            ViewSheets_Form viewSheetsForm = new ViewSheets_Form(sheetsWithViewports);
+            viewSheetsForm.ShowDialog();
+            if (viewSheetsForm.DialogResult != true)
+                return Result.Cancelled;
+
+            // Get the selected ViewSheetInfo objects from the DataGrid
+            List<ViewSheet> selectedViewSheets = viewSheetsForm.GetSelectedViewSheets();
+
+            //if (true) return Result.Cancelled;
 
             // Set the value of the Visibility Yes/No parameters of the title block regions to 1
             using (Transaction transaction = new Transaction(doc))
             {
                 transaction.Start("Set the value of the Visibility Yes/No parameters of the title block regions");
 
-                foreach (var curSheet in sheetsWithViewports)
+                // Initialize the YesNoParamsResults
+                YesNoParamsResults = new List<YesNoParamInfo>();
+
+                foreach (var curSheet in selectedViewSheets)
                 {
                     FamilyInstance titleBlockInstance = GetTitleBlockInstanceFromViewSheet(doc, curSheet);
 
@@ -62,22 +74,75 @@ namespace ArchilizerTinyTools
 
                     // get the associated scope box name of the view
                     var scopeBoxName = GetViewAssociatedScopeBoxName(doc, viewOnSheet);
+                    if (string.IsNullOrEmpty(scopeBoxName))
+                    {
+                        Debug.WriteLine($"No scope box associated with the view on sheet {curSheet.SheetNumber} - {curSheet.Name}");
+                        // if there is no scope box associated with the view, skip the sheet
+                        continue;
+                    }
 
                     // Get the associated YesNo visibility parameters of the title block instance
                     List<Parameter> yesNoVisibilityParameters = GetAssociatedYesNoVisibilityParameters(titleBlockInstance);
-
-                    foreach (var parameter in yesNoVisibilityParameters)
-                    {
-                        if (parameter.Definition.Name.Contains(scopeBoxName))
-                            parameter.Set(1);
-                        else
-                            parameter.Set(0);
-                    }
+                    if (yesNoVisibilityParameters.Any()) // if there are any YesNo parameters
+                        TurnOnYesNoParamsByScopeBoxName(scopeBoxName, yesNoVisibilityParameters, curSheet.SheetNumber, curSheet.Name);
                 }
                 transaction.Commit();
             }
 
+            ShowResults();
+
             return Result.Succeeded;
+        }
+
+        private void ShowResults()
+        {
+            if (YesNoParamsResults.Count == 0)
+            {
+                TaskDialog.Show("Info", "No YesNo parameters changed.");
+                return;
+            }
+
+            // sort YesNoParamsResults by SheetNumber
+            YesNoParamsResults = YesNoParamsResults.OrderBy(x => x.SheetNumber).ToList();
+
+            // Show the results in a new ResultYesNoParams_Form
+            ResultYesNoParams_Form resultYesNoParamsForm = new ResultYesNoParams_Form(YesNoParamsResults);
+            resultYesNoParamsForm.ShowDialog();
+
+        }
+
+        private static void TurnOnYesNoParamsByScopeBoxName(
+            string scopeBoxName,
+            List<Parameter> yesNoVisibilityParameters,
+            string sheetNumber,
+            string sheetName)
+        {
+            foreach (var parameter in yesNoVisibilityParameters)
+            {
+                if (parameter.Definition.Name.Contains(scopeBoxName))
+                {
+                    parameter.Set(1);
+                    YesNoParamsResults.Add(new YesNoParamInfo
+                    {
+                        ParamName = parameter.Definition.Name,
+                        Value = parameter.Id,
+                        SheetNumber = sheetNumber,
+                        SheetName = sheetName
+                    });
+                }
+                else
+                    parameter.Set(0);
+            }
+        }
+
+        private static bool VerifyRequirements(List<ViewSheet> sheetsWithViewports)
+        {
+            if (sheetsWithViewports.Count == 0)
+            {
+                TaskDialog.Show("Info", "No Sheets with views found.");
+                return false;
+            }
+            return true;
         }
 
         private static FamilyInstance GetTitleBlockInstanceFromViewSheet(Document doc, ViewSheet viewSheet)
@@ -93,6 +158,48 @@ namespace ArchilizerTinyTools
             return titleBlockFamilyInstance;
         }
 
+        private static List<ViewSheet> GetSheetsWithViewPortsAndAssociatedScopeBoxes(Document doc)
+        {
+            // Create a FilteredElementCollector for collecting all ViewSheet elements from the given document
+            var viewSheetCollector = new FilteredElementCollector(doc)
+                .OfClass(typeof(ViewSheet))
+                .WhereElementIsNotElementType()
+                .Cast<ViewSheet>();
+
+            // Filter the collected sheets to only include those that have associated viewports with views containing a scope box
+            var sheetsWithViewportsAndScopeBoxes = viewSheetCollector
+                .Where(sheet =>
+                    // Create a new FilteredElementCollector for collecting all Viewport elements in the document
+                    new FilteredElementCollector(doc)
+                        .OfClass(typeof(Viewport))
+                        .WhereElementIsNotElementType()
+                        .Cast<Viewport>()
+                        // Check if any viewport on the sheet has an associated view with a valid scope box
+                        .Any(viewport =>
+                        {
+                            if (viewport.SheetId != sheet.Id)
+                                return false;
+
+                            // Get the view associated with this viewport
+                            View view = doc.GetElement(viewport.ViewId) as View;
+
+                            // Check if the view has an associated scope box
+                            if (view != null)
+                            {
+                                // Retrieve the ScopeBox parameter from the view
+                                ElementId scopeBoxId = view.get_Parameter(BuiltInParameter.VIEWER_VOLUME_OF_INTEREST_CROP)?.AsElementId() ?? ElementId.InvalidElementId;
+
+                                // Verify if the scope box ID is valid
+                                return scopeBoxId != ElementId.InvalidElementId;
+                            }
+                            return false;
+                        })
+                )
+                .ToList();
+
+            // Return the list of ViewSheet objects that contain viewports with views that have associated scope boxes
+            return sheetsWithViewportsAndScopeBoxes;
+        }
 
         // Method to retrieve a list of ViewSheet objects that contain viewports
         private static List<ViewSheet> GetSheetsWithViewPorts(Document doc)
@@ -170,13 +277,19 @@ namespace ArchilizerTinyTools
                 {
                     // Check if the parameter is of YesNo type and controls visibility
 #if REVIT2020 || REVIT2021
-                    if (param.Definition.ParameterType == ParameterType.YesNo && param.IsReadOnly == false)
+                    if (param.Definition.ParameterType == ParameterType.YesNo &&
+                        param.IsReadOnly == false &&
+                        param.Definition.ParameterGroup == BuiltInParameterGroup.PG_VISIBILITY
+                        )
                     {
                         // Add the parameter to the list if it meets the criteria
                         yesNoVisibilityParameters.Add(param);
                     }
 #else
-                    if (param.Definition.GetDataType() == SpecTypeId.Boolean.YesNo && param.IsReadOnly == false)
+                    if (param.Definition.GetDataType() == SpecTypeId.Boolean.YesNo &&
+                        param.IsReadOnly == false &&
+                        param.Definition.ParameterGroup == BuiltInParameterGroup.PG_VISIBILITY
+                        )
                     {
                         // Add the parameter to the list if it meets the criteria
                         yesNoVisibilityParameters.Add(param);
@@ -259,12 +372,9 @@ namespace ArchilizerTinyTools
                 MethodBase.GetCurrentMethod().DeclaringType?.FullName,
                 Properties.Resources.Red_32,
                 Properties.Resources.Red_16,
-                "Create new sheets from selected views");
+                "Set KeyMap YesNo param to On based on the scope box name of the view placed on each sheet. \nThe parameters have to have the same name of the scope box associated to the viewport");
 
             return myButtonData1.Data;
         }
     }
-
-
-
 }

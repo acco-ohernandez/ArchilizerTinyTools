@@ -5,7 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ArchilizerTinyTools.Forms"
         mc:Ignorable="d"
-            Title="TitleBlocksListForm" Height="450" Width="800">
+        Height="450" 
+        Width="550"
+        MinWidth="400"
+        WindowStartupLocation="CenterScreen"
+        Title="Enable Regions" 
+        >
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="50"/>
@@ -13,29 +18,37 @@
             <RowDefinition Height="50"/>
         </Grid.RowDefinitions>
 
+        <!-- Row [0] -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center">
+            <Label Content="Enable Region YesNo Params on sheets" FontSize="20" FontWeight="Bold" />
+        </StackPanel>
+
+        <!-- Row [1] -->
         <!-- DataGrid for displaying title blocks -->
-        <DataGrid x:Name="dg_ViewSheets" 
-              Grid.Row="1"
-              AutoGenerateColumns="False"
-              CanUserAddRows="False" 
-              CanUserDeleteRows="False" 
-              CanUserReorderColumns="False" 
-              CanUserResizeColumns="True" 
-              CanUserResizeRows="False" 
-              CanUserSortColumns="True" 
-              IsReadOnly="True"
-              ItemsSource="{Binding}"
-              AlternatingRowBackground="AliceBlue"
-              SelectionMode="Single"
-              EnableColumnVirtualization="False"
-              EnableRowVirtualization="True"
-              MinWidth="300"
-              Margin="10"
-              HeadersVisibility="Column">
+        <DataGrid x:Name="dg_ViewSheets"
+                  Grid.Row="1"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False" 
+                  CanUserDeleteRows="False" 
+                  CanUserReorderColumns="False" 
+                  CanUserResizeColumns="True" 
+                  CanUserResizeRows="False" 
+                  CanUserSortColumns="True" 
+                  IsReadOnly="True"
+                  ItemsSource="{Binding}"
+                  AlternatingRowBackground="AliceBlue"
+                  SelectionMode="Extended"
+                  EnableColumnVirtualization="False"
+                  EnableRowVirtualization="True"
+                  MouseDoubleClick="dg_MouseDoubleClick" 
+                  SelectionChanged="dg_ViewSheets_SelectionChanged"
+                  MinWidth="300"
+                  Margin="10"
+                  HeadersVisibility="Column">
 
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Title" Binding="{Binding SheetType}"/>
-                <DataGridTextColumn Header="Name" Binding="{Binding SheetName}"/>
+                <DataGridTextColumn Header="Sheet Type" Binding="{Binding SheetType}" Width="auto"/>
+                <DataGridTextColumn Header="Sheet Name" Binding="{Binding SheetName}" Width="*"/>
             </DataGrid.Columns>
 
         </DataGrid>
@@ -48,7 +61,7 @@
             Height="30"
             HorizontalAlignment="Center" 
             VerticalAlignment="Center"
-            Click="btn_OK_Click"/>
+            Click="btn_OK_Click" IsEnabled="False"/>
 
     </Grid>
 </Window>

@@ -172,6 +172,9 @@
     <Compile Include="Forms\ResultGridsForm.xaml.cs">
       <DependentUpon>ResultGridsForm.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Forms\ResultYesNoParams_Form.xaml.cs">
+      <DependentUpon>ResultYesNoParams_Form.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Forms\SampleViewModel.cs" />
     <Compile Include="Forms\ViewSheetInfo.cs" />
     <Compile Include="Forms\ViewScopeBoxesInfo.cs" />
@@ -197,6 +200,7 @@
     <Compile Include="Utils\CommandAvailability.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utils\Utils.cs" />
+    <Compile Include="Forms\YesNoParamInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\Yellow_32.png" />
@@ -227,6 +231,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Forms\ResultYesNoParams_Form.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Forms\TitleBlocksListForm.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -247,7 +255,7 @@ echo *** Copying results to $(RevitVersion)
 if exist "$(AppData)\Autodesk\REVIT\Addins\$(RevitVersion)" copy "$(ProjectDir)*.addin" "$(AppData)\Autodesk\REVIT\Addins\$(RevitVersion)"
 if exist "$(AppData)\Autodesk\REVIT\Addins\$(RevitVersion)" copy "$(ProjectDir)$(OutputPath)*.dll" "$(AppData)\Autodesk\REVIT\Addins\$(RevitVersion)"
 echo Manually copy DLL To:
-echo C:\Visual Studio Files\ArchilizerTinyTools\ArchilizerTinyTools\bin\Debug\2022</PostBuildEvent>
+echo G:\Shared drives\BIM Technologies - Projects\#47 - Revit Ribbon\BIM Team - Creating Sheets from Views\2022 DLL</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
