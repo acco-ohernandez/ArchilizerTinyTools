@@ -9,24 +9,42 @@
         Width="550"
         MinWidth="400"
         WindowStartupLocation="CenterScreen"
-        Title="Enable Regions" 
+        Title="Key Plan - Visibility per Sheet" 
         >
+    <Window.Resources>
+        <Style TargetType="DataGridRow">
+            <Style.Resources>
+                <!-- Set the background color for selected rows when the DataGrid is inactive -->
+                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="Cyan"/>
+            </Style.Resources>
+        </Style>
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="50"/>
+            <RowDefinition Height="95"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="50"/>
         </Grid.RowDefinitions>
 
         <!-- Row [0] -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center">
-            <Label Content="Enable Region YesNo Params on sheets" FontSize="20" FontWeight="Bold" />
+        <StackPanel Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Left" Margin="10,0,0,0" Grid.ColumnSpan="2">
+            <Label Content="Turn On Key Plan Visibility Parameters per Sheet" FontSize="20" FontWeight="Bold" />
+            <Label Content="Select which Sheets to turn on Key Plan Visibility Parameters for" FontSize="12"  />
+            
+            <StackPanel Orientation="Horizontal" x:Name="sp_SearchFields" >
+                <Label Content="Sheet Type:" FontSize="12"  />
+                <ComboBox x:Name="cb_SheetType" Width="170" Margin="0,0,15,0" SelectionChanged="cb_SheetType_SelectionChanged" Loaded="cb_SheetType_Loaded" />
+
+                <Label Content="Search Sheets:" FontSize="12"  />
+                <TextBox x:Name="tb_SearchSheets" Width="170" TextChanged="tb_SearchSheets_TextChanged"/>
+            </StackPanel>
         </StackPanel>
 
         <!-- Row [1] -->
         <!-- DataGrid for displaying title blocks -->
         <DataGrid x:Name="dg_ViewSheets"
                   Grid.Row="1"
+                  GridLinesVisibility="None"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False" 
                   CanUserDeleteRows="False" 
@@ -43,8 +61,8 @@
                   MouseDoubleClick="dg_MouseDoubleClick" 
                   SelectionChanged="dg_ViewSheets_SelectionChanged"
                   MinWidth="300"
-                  Margin="10"
-                  HeadersVisibility="Column">
+                  Margin="10,10,10,10"
+                  HeadersVisibility="Column" Grid.ColumnSpan="2">
 
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Sheet Type" Binding="{Binding SheetType}" Width="auto"/>
@@ -54,14 +72,23 @@
         </DataGrid>
 
         <!-- OK Button -->
-        <Button Grid.Row="2" 
-            x:Name="btn_OK" 
-            Content="Ok" 
-            Width="80"
-            Height="30"
-            HorizontalAlignment="Center" 
-            VerticalAlignment="Center"
-            Click="btn_OK_Click" IsEnabled="False"/>
+        <StackPanel Orientation="Horizontal" Grid.Row="2" HorizontalAlignment="Center">
+
+            <Button  
+                x:Name="btn_OK" 
+                Content="OK" 
+                Width="80"
+                Height="30"
+                Click="btn_OK_Click" IsEnabled="False" Margin="5"/>
+            <!--Cancel button-->
+            <Button 
+                x:Name="btn_Cancel" 
+                Content="Cancel" 
+                Width="80"
+                Height="30"
+                Click="btn_Cancel_Click" Margin="5"/>
+
+        </StackPanel>
 
     </Grid>
 </Window>

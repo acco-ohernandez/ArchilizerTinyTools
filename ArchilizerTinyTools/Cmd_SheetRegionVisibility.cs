@@ -69,6 +69,16 @@ namespace ArchilizerTinyTools
                 foreach (var curSheet in selectedViewSheets)
                 {
                     FamilyInstance titleBlockInstance = GetTitleBlockInstanceFromViewSheet(doc, curSheet);
+                    if (titleBlockInstance == null)
+                    {
+                        Debug.WriteLine($"No title block instance found on sheet {curSheet.SheetNumber} - {curSheet.Name}");
+                        //// if there is no title block instance on the sheet, skip the sheet
+                        //continue;
+                        // Rollback the transaction if there is no title block instance on the sheet
+                        transaction.RollBack();
+                        TaskDialog.Show("Error", $"No title block instance found on sheet {curSheet.SheetNumber} - {curSheet.Name}");
+                        return Result.Failed;
+                    }
 
                     var viewOnSheet = GetViewsOnSheet(doc, curSheet).FirstOrDefault();
 
@@ -139,7 +149,7 @@ namespace ArchilizerTinyTools
         {
             if (sheetsWithViewports.Count == 0)
             {
-                TaskDialog.Show("Info", "No Sheets with views found.");
+                TaskDialog.Show("Info", "No Sheets meeting the required crateria found.");
                 return false;
             }
             return true;
@@ -159,6 +169,136 @@ namespace ArchilizerTinyTools
         }
 
         private static List<ViewSheet> GetSheetsWithViewPortsAndAssociatedScopeBoxes(Document doc)
+        {
+            // Collect all ViewSheet elements from the document
+            var viewSheetCollector = new FilteredElementCollector(doc)
+                .OfClass(typeof(ViewSheet))
+                .WhereElementIsNotElementType()
+                .Cast<ViewSheet>()
+                .Where(sheet =>
+                {
+                    // Check for a valid title block instance
+                    var curSheetTitleBlock = GetTitleBlockInstanceFromViewSheet(doc, sheet);
+                    if (curSheetTitleBlock == null)
+                        return false;
+
+                    // Check for Yes/No visibility parameters
+                    var yesNoParams = GetAssociatedYesNoVisibilityParameters(curSheetTitleBlock);
+                    if (!yesNoParams.Any())
+                        return false;
+
+                    // Check if any view on the sheet has an associated scope box
+                    var viewOnSheet = GetViewsOnSheet(doc, sheet).FirstOrDefault();
+                    if (viewOnSheet == null)
+                        return false;
+
+                    var scopeBoxName = GetViewAssociatedScopeBoxName(doc, viewOnSheet);
+                    return !string.IsNullOrEmpty(scopeBoxName);
+                })
+                .ToList();
+
+            // Filter collected sheets for those with viewports having associated scope boxes
+            var sheetsWithViewportsAndScopeBoxes = viewSheetCollector
+                .Where(sheet =>
+                    new FilteredElementCollector(doc)
+                        .OfClass(typeof(Viewport))
+                        .WhereElementIsNotElementType()
+                        .Cast<Viewport>()
+                        .Any(viewport =>
+                        {
+                            // Check if the viewport belongs to the current sheet
+                            if (viewport.SheetId != sheet.Id)
+                                return false;
+
+                            // Retrieve the view associated with the viewport
+                            View view = doc.GetElement(viewport.ViewId) as View;
+                            if (view == null)
+                                return false;
+
+                            // Check if the view has a valid ScopeBox parameter
+                            var scopeBoxId = view.get_Parameter(BuiltInParameter.VIEWER_VOLUME_OF_INTEREST_CROP)?.AsElementId() ?? ElementId.InvalidElementId;
+                            return scopeBoxId != ElementId.InvalidElementId;
+                        })
+                )
+                // Order by "Sheet Type" and then "Name"
+                .OrderBy(sheet => sheet.LookupParameter("Sheet Type")?.AsString())
+                .ThenBy(sheet => sheet.Name)
+                .ToList();
+
+            // Return the filtered list of sheets
+            return sheetsWithViewportsAndScopeBoxes;
+        }
+
+        private static List<ViewSheet> GetSheetsWithViewPortsAndAssociatedScopeBoxes3(Document doc)
+        {
+            // Create a FilteredElementCollector for collecting all ViewSheet elements from the given document
+            var viewSheetCollector = new FilteredElementCollector(doc)
+                .OfClass(typeof(ViewSheet))
+                .WhereElementIsNotElementType()
+                .Cast<ViewSheet>()
+                .Where(sheet =>
+                {
+                    // Get the title block instance from the view sheet
+                    var curSheetTitleBlock = GetTitleBlockInstanceFromViewSheet(doc, sheet);
+                    if (curSheetTitleBlock == null)
+                        return false;
+
+                    // Check if the title block instance has associated Yes/No visibility parameters
+                    var yesNoParams = GetAssociatedYesNoVisibilityParameters(curSheetTitleBlock);
+                    if (!yesNoParams.Any())
+                        return false;
+
+                    // Get a view on the sheet
+                    var viewOnSheet = GetViewsOnSheet(doc, sheet).FirstOrDefault();
+                    if (viewOnSheet == null)
+                        return false;
+
+                    // Check if the view has an associated scope box
+                    var scopeBoxName = GetViewAssociatedScopeBoxName(doc, viewOnSheet);
+                    return !string.IsNullOrEmpty(scopeBoxName);
+                })
+                .ToList();
+
+
+            // Filter the collected sheets to only include those that have associated viewports with views containing a scope box
+            var sheetsWithViewportsAndScopeBoxes = viewSheetCollector
+                .Where(sheet =>
+                    // Create a new FilteredElementCollector for collecting all Viewport elements in the document
+                    new FilteredElementCollector(doc)
+                        .OfClass(typeof(Viewport))
+                        .WhereElementIsNotElementType()
+                        .Cast<Viewport>()
+                        // Check if any viewport on the sheet has an associated view with a valid scope box
+                        .Any(viewport =>
+                        {
+                            if (viewport.SheetId != sheet.Id)
+                                return false;
+
+                            // Get the view associated with this viewport
+                            View view = doc.GetElement(viewport.ViewId) as View;
+
+                            // Check if the view has an associated scope box
+                            if (view != null)
+                            {
+                                // Retrieve the ScopeBox parameter from the view
+                                ElementId scopeBoxId = view.get_Parameter(BuiltInParameter.VIEWER_VOLUME_OF_INTEREST_CROP)?.AsElementId() ?? ElementId.InvalidElementId;
+
+                                // Verify if the scope box ID is valid
+                                return scopeBoxId != ElementId.InvalidElementId;
+                            }
+                            return false;
+                        })
+                )
+                // order by sheet type and sheet name
+                .OrderBy(x => x.LookupParameter("Sheet Type")?.AsString())
+                .ThenBy(x => x.Name)
+                .ToList();
+
+            // Return the list of ViewSheet objects that contain viewports with views that have associated scope boxes
+            return sheetsWithViewportsAndScopeBoxes;
+        }
+
+        private static List<ViewSheet> GetSheetsWithViewPortsAndAssociatedScopeBoxes2(Document doc)
         {
             // Create a FilteredElementCollector for collecting all ViewSheet elements from the given document
             var viewSheetCollector = new FilteredElementCollector(doc)
@@ -195,6 +335,9 @@ namespace ArchilizerTinyTools
                             return false;
                         })
                 )
+                // order by sheet type and sheet name
+                .OrderBy(x => x.LookupParameter("Sheet Type")?.AsString())
+                .ThenBy(x => x.Name)
                 .ToList();
 
             // Return the list of ViewSheet objects that contain viewports with views that have associated scope boxes

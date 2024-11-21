@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:ArchilizerTinyTools.Forms"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        Title="Enabled Params Result" Height="450" Width="600">
+        Title="Key Plan - Visibility per Sheet Summary" Height="450" Width="600">
     <Grid>
 
 
@@ -29,7 +29,7 @@
           HeadersVisibility="Column"
           Margin="10" >
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Visibility Param" Binding="{Binding ParamName}" Width="auto" />
+                <DataGridTextColumn Header="Visible" Binding="{Binding ParamName}" Width="auto" />
                 <DataGridTextColumn Header="Sheet Number" Binding="{Binding SheetNumber}" Width="auto" />
                 <DataGridTextColumn Header="Sheet Name" Binding="{Binding SheetName}" Width="*" />
             </DataGrid.Columns>

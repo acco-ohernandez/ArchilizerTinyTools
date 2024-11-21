@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ArchilizerTinyTools.Forms"
         mc:Ignorable="d"
+        WindowStartupLocation="CenterScreen"
         Title="TitleBlocksListForm" Height="450" Width="800">
     <Grid>
         <Grid.RowDefinitions>
@@ -16,6 +17,7 @@
         <!-- DataGrid for displaying title blocks -->
         <DataGrid x:Name="TitleBlocksDataGrid" 
                   Grid.Row="1"
+                  GridLinesVisibility="None"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False" 
                   CanUserDeleteRows="False" 

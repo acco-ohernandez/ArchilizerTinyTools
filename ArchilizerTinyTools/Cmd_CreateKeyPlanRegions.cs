@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -25,6 +26,7 @@ namespace ArchilizerTinyTools
     public class Cmd_CreateKeyPlanRegions : IExternalCommand
     {
         public string SetupViewName { get; private set; }
+        public int countOfVisibilityParametersAdded { get; set; }
 
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
@@ -82,8 +84,8 @@ namespace ArchilizerTinyTools
                     return Result.Failed;
                 }
 
-
-
+                // initialize the count of visibility parameters added
+                countOfVisibilityParametersAdded = 0;
 
                 // Step 2: Add the parameter to the title block family
                 //Document familyDoc = AddParameterToTitleBlockFamily(doc, titleBlock, listOfNewParamNames, out message);
@@ -103,7 +105,23 @@ namespace ArchilizerTinyTools
             }
             // writeline ~11001100 outputs the value of: 
             //Console.WriteLine(~11001100);// -11001101. This is called bitwise NOT operator. It inverts the bits of its operand.
+
+            // show task dialog with the count of visibility parameters added
+            ShowResultsDialog();
+
             return Result.Succeeded;
+        }
+
+        private void ShowResultsDialog()
+        {
+
+            if (countOfVisibilityParametersAdded == 1)
+                TaskDialog.Show("Info", $"{countOfVisibilityParametersAdded} Visibility Parameter Added.");
+            else if (countOfVisibilityParametersAdded > 1)
+                TaskDialog.Show("Info", $"{countOfVisibilityParametersAdded} Visibility Parameters Added.");
+
+            else
+                TaskDialog.Show("Info", "No Visibility Parameters Added");
         }
 
         private bool ValidateBIMSetupViewHasScopeBoxes(List<string> listOfNewParamNames)
@@ -541,6 +559,9 @@ namespace ArchilizerTinyTools
                             parameterYesNoTypeId,
                             isInstance
                         );
+
+                        if (newParameter != null)// increment the count of visibility parameters added
+                            countOfVisibilityParametersAdded++;
 
                         // Set the parameter's default value to false (unchecked)
                         if (parameterYesNoTypeId == SpecTypeId.Boolean.YesNo)
