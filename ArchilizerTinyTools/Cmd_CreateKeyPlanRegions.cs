@@ -114,15 +114,20 @@ namespace ArchilizerTinyTools
 
         private void ShowResultsDialog()
         {
-
-            if (countOfVisibilityParametersAdded == 1)
-                TaskDialog.Show("Info", $"{countOfVisibilityParametersAdded} Visibility Parameter Added.");
-            else if (countOfVisibilityParametersAdded > 1)
-                TaskDialog.Show("Info", $"{countOfVisibilityParametersAdded} Visibility Parameters Added.");
-
+            string message;
+            // this will add an "s" to the word "Parameter" if the count is greater than 1
+            if (countOfVisibilityParametersAdded > 0)
+            {
+                message = $"{countOfVisibilityParametersAdded} Visibility Parameter{(countOfVisibilityParametersAdded > 1 ? "s" : "")} added to Title Block.";
+            }
             else
-                TaskDialog.Show("Info", "No Visibility Parameters Added");
+            {
+                message = "No Visibility Parameters Added";
+            }
+
+            TaskDialog.Show("Key Plan - Visibility Parameters", message);
         }
+
 
         private bool ValidateBIMSetupViewHasScopeBoxes(List<string> listOfNewParamNames)
         {
